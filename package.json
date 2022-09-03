@@ -1,7 +1,7 @@
 {
-  "name": "test",
+  "name": "del",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Dynamic javascript Expression Language",
   "main": "lib/del.js",
   "module": "dist/bundle.es.js",
   "types": "lib/del.d.ts",
@@ -9,9 +9,27 @@
     "build": "rm -rf dist lib && rollup -c rollup.config.js && tsc --project tsconfig-build.json",
     "test": "nyc --reporter=html --reporter=text mocha --require ts-node/register --extension .ts --recursive test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wangfengming/del"
+  },
+  "files": [
+    "src",
+    "lib",
+    "dist"
+  ],
+  "keywords": [
+    "expression",
+    "evaluator",
+    "parser",
+    "jsep"
+  ],
+  "author": "wangfengming<1409161814@qq.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wangfengming/del/issues"
+  },
+  "homepage": "https://github.com/wangfengming/del",
   "devDependencies": {
     "@babel/cli": "^7.18.9",
     "@babel/core": "^7.18.9",

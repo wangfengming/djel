@@ -19,6 +19,9 @@ import type { Grammar } from './types';
 export const PIPE_PRIORITY = 80;
 export const INDEX_PRIORITY = 100;
 
+/**
+ * A map of all expression elements to their properties.
+ */
 export const getGrammar = (): Grammar => ({
   symbols: {
     '[': { type: 'openBracket' },
