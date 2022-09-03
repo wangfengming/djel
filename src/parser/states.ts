@@ -88,7 +88,7 @@ export const states: Record<StateType, State> = {
   exprTransform: {
     subHandler: subHandlers.exprTransform,
     endStates: {
-      closeParen: 'postTransformArgs',
+      closeParen: 'postTransform',
     },
   },
   argVal: {

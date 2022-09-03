@@ -3,17 +3,17 @@ import { terser } from 'rollup-plugin-terser'
 const rollupTypescript = require('@rollup/plugin-typescript')
 
 export default {
-  input: 'src/del.ts',
+  input: 'src/index.ts',
   output: [
     {
       file: 'dist/bundle.umd.js',
       format: 'umd',
-      name: 'Del',
+      name: 'Djel',
     },
     {
       file: 'dist/bundle.umd.min.js',
       format: 'umd',
-      name: 'Del',
+      name: 'Djel',
       plugins: [terser()]
     },
     {

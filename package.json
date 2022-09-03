@@ -1,22 +1,23 @@
 {
-  "name": "del",
+  "name": "djel",
   "version": "1.0.0",
-  "description": "A Dynamic javascript Expression Language",
-  "main": "lib/del.js",
+  "description": "Dynamic javascript Expression Language: Powerful context-based expression parser and evaluator.",
+  "main": "lib/index.js",
   "module": "dist/bundle.es.js",
-  "types": "lib/del.d.ts",
+  "types": "lib/index.d.ts",
   "scripts": {
     "build": "rm -rf dist lib && rollup -c rollup.config.js && tsc --project tsconfig-build.json",
     "test": "nyc --reporter=html --reporter=text mocha --require ts-node/register --extension .ts --recursive test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wangfengming/del"
+    "url": "https://github.com/wangfengming/djel"
   },
   "files": [
     "src",
     "lib",
-    "dist"
+    "dist",
+    "example.js"
   ],
   "keywords": [
     "expression",
@@ -24,12 +25,16 @@
     "parser",
     "jsep"
   ],
-  "author": "wangfengming<1409161814@qq.com>",
+  "authors": [
+    "Tom Shawver <tom@frosteddesign.com>",
+    "wangfengming <1409161814@qq.com>"
+  ],
+  "author": "wangfengming <1409161814@qq.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/wangfengming/del/issues"
+    "url": "https://github.com/wangfengming/djel/issues"
   },
-  "homepage": "https://github.com/wangfengming/del",
+  "homepage": "https://github.com/wangfengming/djel",
   "devDependencies": {
     "@babel/cli": "^7.18.9",
     "@babel/core": "^7.18.9",

@@ -64,7 +64,12 @@ export function Evaluator(grammar: Grammar, context?: any) {
      */
     IndexExpression: (ast: IndexExpressionNode) => {
       const left = evaluate(ast.left);
-      return left != null ? left[evaluate(ast.right)] : undefined;
+      if (left == null) return undefined;
+      const key = evaluate(ast.right);
+      if (Array.isArray(left) && key < 0) {
+        return left[left.length + key];
+      }
+      return left[key];
     },
     /**
      * Evaluates an ArrayLiteral by returning its value, with each element

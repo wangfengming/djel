@@ -4,11 +4,13 @@ import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
 import { Evaluator } from './evaluator';
 
+export type { BinaryOpGrammar, UnaryOpGrammar } from './types';
+
 /**
- * Del is the Dynamic Javascript Expression Language, capable of parsing and
+ * Djel is the Dynamic Javascript Expression Language, capable of parsing and
  * evaluating basic to complex expression strings into native Javascript objects.
  */
-export default function Del() {
+export default function Djel() {
   let grammar = getGrammar();
   let tokenizer = Tokenizer(grammar);
 
@@ -50,7 +52,7 @@ export default function Del() {
   };
 
   /**
-   * Adds or replaces binary operators to Del at the specified precedence. The higher the
+   * Adds or replaces binary operators to Djel at the specified precedence. The higher the
    * precedence, the earlier the operator is applied in the order of operations.
    * For example, * has a higher precedence than +, because multiplication comes
    * before division.
@@ -65,7 +67,7 @@ export default function Del() {
   };
 
   /**
-   * Adds or replaces unary operators to Del. Unary operators are currently only supported
+   * Adds or replaces unary operators to Djel. Unary operators are currently only supported
    * on the left side of the value on which it will operate.
    */
   const addUnaryOps = (unaryOps: Record<string, UnaryOpGrammar>) => {
@@ -74,7 +76,7 @@ export default function Del() {
   };
 
   /**
-   * Adds or replaces transform functions in this Del instance.
+   * Adds or replaces transform functions in this Djel instance.
    */
   const addTransforms = (transforms: Record<string, Function>) => {
     grammar = {
@@ -84,7 +86,7 @@ export default function Del() {
   };
 
   /**
-   * Removes a binary or unary operator from the Del grammar.
+   * Removes a binary or unary operator from the Djel grammar.
    * @param {string} operator The operator string to be removed
    */
   const removeOp = (operator: string) => {

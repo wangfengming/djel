@@ -42,7 +42,10 @@ export const getGrammar = (): Grammar => ({
     },
     '+': {
       priority: 50,
-      fn: (left, right) => left + right,
+      fn: (left, right) => {
+        if (Array.isArray(left) && Array.isArray(right)) return left.concat(right);
+        return left + right;
+      },
     },
     '-': {
       priority: 50,

@@ -24,9 +24,8 @@ describe('Evaluator', () => {
   });
   it('should evaluate a string concat', () => {
     const e = Evaluator(grammar);
-    expect(e
-      .evaluate(toTree('"Hello" + (4+4) + "Wo\\"rld"')),
-    ).to.equal('Hello8Wo"rld');
+    expect(e.evaluate(toTree('"Hello" + (4+4) + "Wo\\"rld"')))
+      .to.equal('Hello8Wo"rld');
   });
   it('should evaluate a true comparison expression', () => {
     const e = Evaluator(grammar);
@@ -60,8 +59,13 @@ describe('Evaluator', () => {
   it('should apply complex lambda transforms', () => {
     const context = { foo: 10 };
     const e = Evaluator(grammar, context);
-    const tree = toTree('foo|({x:@/2,y:@/2+3})');
-    expect(e.evaluate(tree)).to.deep.equal({ x: 5, y: 8 });
+    const tree = toTree('(foo+3+5)|({x:@/2,y:@/2+3})');
+    expect(e.evaluate(tree)).to.deep.equal({ x: 9, y: 12 });
+  });
+  it('should apply lambda transforms with args', () => {
+    const e = Evaluator(grammar);
+    const tree = toTree('(1+2+3)|((@1+@)/(@1-@))(4+5+6) + 3');
+    expect(e.evaluate(tree)).to.equal((15 + 6) / (15 - 6) + 3);
   });
   it('should throw if apply invalid transforms', () => {
     const e = Evaluator(grammar);
@@ -82,9 +86,8 @@ describe('Evaluator', () => {
     };
     const filter = (arr: any[], fn: (i: any) => any) => arr.filter(fn);
     const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, filter } }, context);
-    expect(e
-      .evaluate(toTree('foo.bar|filter(@.tek == "baz")')),
-    ).to.deep.equal([{ tek: 'baz' }]);
+    expect(e.evaluate(toTree('foo.bar|filter(@.tek == "baz")')))
+      .to.deep.equal([{ tek: 'baz' }]);
   });
   it('should map arrays', () => {
     const context = {
@@ -94,9 +97,8 @@ describe('Evaluator', () => {
     };
     const map = (arr: any[], fn: (i: any) => any) => arr.map(fn);
     const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, map } }, context);
-    expect(e
-      .evaluate(toTree('foo.bar|map({tek: "1"+(@.tek||@.tok)})')),
-    ).to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
+    expect(e.evaluate(toTree('foo.bar|map({tek: "1"+(@.tek||@.tok)})')))
+      .to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
   });
   it('should reduce arrays', () => {
     const context = {
@@ -121,9 +123,7 @@ describe('Evaluator', () => {
   it('should allow index object properties', () => {
     const context = { foo: { baz: { bar: 'tek' } } };
     const e = Evaluator(grammar, context);
-    expect(e
-      .evaluate(toTree('foo["ba" + "z"].bar')),
-    ).to.equal(context.foo.baz.bar);
+    expect(e.evaluate(toTree('foo["ba" + "z"].bar'))).to.equal(context.foo.baz.bar);
   });
   it('should allow simple index on undefined objects', () => {
     const context = { foo: {} };
@@ -140,9 +140,7 @@ describe('Evaluator', () => {
   });
   it('should evaluate an object literal', () => {
     const e = Evaluator(grammar);
-    expect(e
-      .evaluate(toTree('{foo: {bar: "tek"}}')),
-    ).to.deep.equal({ foo: { bar: 'tek' } });
+    expect(e.evaluate(toTree('{foo: {bar: "tek"}}'))).to.deep.equal({ foo: { bar: 'tek' } });
   });
   it('should evaluate an empty object literal', () => {
     const e = Evaluator(grammar);
@@ -153,9 +151,8 @@ describe('Evaluator', () => {
       return val + ': ' + a1 + a2 + a3;
     };
     const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, concat } });
-    expect(e
-      .evaluate(toTree('"foo"|concat("baz", "bar", "tek")')),
-    ).to.equal('foo: bazbartek');
+    expect(e.evaluate(toTree('"foo"|concat("baz", "bar", "tek")')))
+      .to.equal('foo: bazbartek');
   });
   it('should evaluate dot notation for object literals', () => {
     const e = Evaluator(grammar);
@@ -167,9 +164,7 @@ describe('Evaluator', () => {
   });
   it('should evaluate array literals', () => {
     const e = Evaluator(grammar);
-    expect(e
-      .evaluate(toTree('["foo", 1+2]')),
-    ).to.deep.equal(['foo', 3]);
+    expect(e.evaluate(toTree('["foo", 1+2]'))).to.deep.equal(['foo', 3]);
   });
   it('should allow properties on empty arrays', () => {
     const context = { foo: {} };
