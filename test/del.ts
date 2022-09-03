@@ -84,8 +84,15 @@ describe('Del', () => {
   });
 
   describe('Grammars', () => {
+    it('+', () => {
+      expect(del.evaluate('+1')).to.equal(1);
+      expect(del.evaluate('2+1')).to.equal(2 + 1);
+      expect(del.evaluate('+x.y', { x: { y: '1' } })).to.equal(1);
+    });
     it('-', () => {
+      expect(del.evaluate('-1')).to.equal(-1);
       expect(del.evaluate('2-1')).to.equal(2 - 1);
+      expect(del.evaluate('-x.y', { x: { y: 1 } })).to.equal(-1);
     });
     it('%', () => {
       expect(del.evaluate('4%3')).to.equal(4 % 3);
@@ -106,6 +113,12 @@ describe('Del', () => {
     });
     it('!', () => {
       expect(del.evaluate('!3')).to.equal(false);
+    });
+    it('priority', () => {
+      expect(del.evaluate('3 + 4 * 5')).to.equal(23);
+      expect(del.evaluate('(3 + 4) * 5')).to.equal(35);
+      expect(del.evaluate('4 * 3 ^ 2')).to.equal(36);
+      expect(del.evaluate('4 / 3 / 2')).to.equal(4 / 3 / 2);
     });
   });
 });

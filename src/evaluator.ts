@@ -11,8 +11,6 @@ import type {
   FunctionCallNode,
   LambdaNode,
   Grammar,
-  UnaryOpGrammarElement,
-  BinaryOpGrammarElement,
 } from './types';
 
 export function Evaluator(grammar: Grammar, context?: Record<string, any>) {
@@ -20,11 +18,11 @@ export function Evaluator(grammar: Grammar, context?: Record<string, any>) {
     Literal: (ast: LiteralNode) => ast.value,
     Identifier: (ast: IdentifierNode) => context?.[ast.value],
     UnaryExpression: (ast: UnaryExpressionNode) => {
-      const element = grammar.elements[ast.operator] as UnaryOpGrammarElement;
+      const element = grammar.unaryOp[ast.operator];
       return element.fn(evaluate(ast.right));
     },
     BinaryExpression: (ast: BinaryExpressionNode) => {
-      const element = grammar.elements[ast.operator] as BinaryOpGrammarElement;
+      const element = grammar.binaryOp[ast.operator];
       return element.fn(evaluate(ast.left), evaluate(ast.right));
     },
     IndexExpression: (ast: IndexExpressionNode) => evaluate(ast.left)?.[evaluate(ast.right)],

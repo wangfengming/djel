@@ -6,7 +6,7 @@ describe('tokenizer', () => {
   let tokenizer: ReturnType<typeof Tokenizer>;
   beforeEach(() => {
     const grammar = getGrammar();
-    tokenizer = Tokenizer(grammar.elements);
+    tokenizer = Tokenizer(grammar);
   });
 
   describe('Elements', () => {
@@ -100,12 +100,12 @@ describe('tokenizer', () => {
       ]);
     });
     it('should recognize binary operators', () => {
-      const tokens = tokenizer.getTokens(['+']);
+      const tokens = tokenizer.getTokens(['/']);
       expect(tokens).to.deep.equal([
         {
           type: 'binaryOp',
-          value: '+',
-          raw: '+',
+          value: '/',
+          raw: '/',
         },
       ]);
     });
@@ -159,7 +159,8 @@ describe('tokenizer', () => {
         { type: 'binaryOp', value: '+', raw: '+' },
         { type: 'identifier', value: 'x', raw: 'x ' },
         { type: 'binaryOp', value: '-', raw: '-  ' },
-        { type: 'literal', value: -17.55, raw: '-17.55' },
+        { type: 'unaryOp', value: '-', raw: '-' },
+        { type: 'literal', value: 17.55, raw: '17.55' },
         { type: 'binaryOp', value: '*', raw: '*' },
         { type: 'identifier', value: 'y', raw: 'y' },
         { type: 'binaryOp', value: '<=', raw: '<= ' },
@@ -181,11 +182,14 @@ describe('tokenizer', () => {
     });
     it('should consider minus to be negative appropriately', () => {
       expect(tokenizer.tokenize('-1?-2:-3')).to.deep.equal([
-        { type: 'literal', value: -1, raw: '-1' },
+        { type: 'unaryOp', value: '-', raw: '-' },
+        { type: 'literal', value: 1, raw: '1' },
         { type: 'question', value: '?', raw: '?' },
-        { type: 'literal', value: -2, raw: '-2' },
+        { type: 'unaryOp', value: '-', raw: '-' },
+        { type: 'literal', value: 2, raw: '2' },
         { type: 'colon', value: ':', raw: ':' },
-        { type: 'literal', value: -3, raw: '-3' },
+        { type: 'unaryOp', value: '-', raw: '-' },
+        { type: 'literal', value: 3, raw: '3' },
       ]);
     });
   });
@@ -204,7 +208,8 @@ describe('tokenizer', () => {
         { type: 'binaryOp', value: '+', raw: '+' },
         { type: 'identifier', value: 'x', raw: 'x ' },
         { type: 'binaryOp', value: '-', raw: '-  ' },
-        { type: 'literal', value: -17.55, raw: '-17.55' },
+        { type: 'unaryOp', value: '-', raw: '-' },
+        { type: 'literal', value: 17.55, raw: '17.55' },
         { type: 'binaryOp', value: '*', raw: '*' },
         { type: 'identifier', value: 'y', raw: 'y ' },
         { type: 'binaryOp', value: '<=', raw: '<= ' },

@@ -1,18 +1,17 @@
-import type { BinaryOpGrammarElement, Grammar, UnaryOpGrammarElement } from './types';
+import type { BinaryOpGrammarElement, UnaryOpGrammarElement } from './types';
 import { getGrammar } from './grammar';
 import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
 import { Evaluator } from './evaluator';
-import { GrammarElement, OpGrammarElements } from './types';
 
 export default function Del() {
   let grammar = getGrammar();
-  let tokenizer = Tokenizer(grammar.elements);
+  let tokenizer = Tokenizer(grammar);
 
   const compile = <T = any>(exp: string) => {
     const _grammar = grammar;
     const tokens = tokenizer.tokenize(exp);
-    const parser = new Parser(_grammar.elements);
+    const parser = new Parser(_grammar);
     parser.addTokens(tokens);
     const ast = parser.complete();
     return {
@@ -28,26 +27,20 @@ export default function Del() {
     return compile<T>(exp).evaluate(context);
   };
 
-  const adOps = <T extends 'binaryOp' | 'unaryOp'>(
-    type: T,
-    grammarElements: Record<string, OpGrammarElements[T]>,
-  ) => {
-    grammar = {
-      ...grammar,
-      elements: { ...grammar.elements },
-    };
-    Object.keys(grammarElements).forEach((key) => {
-      grammar.elements[key] = { ...grammarElements[key], type } as GrammarElement;
+  const addBinaryOps = (binaryOps: Record<string, Omit<BinaryOpGrammarElement, 'type'>>) => {
+    grammar = { ...grammar, binaryOp: { ...grammar.binaryOp } };
+    Object.keys(binaryOps).forEach((key) => {
+      grammar.binaryOp[key] = { ...binaryOps[key], type: 'binaryOp' };
     });
-    tokenizer.updateGrammarElements(grammar.elements);
+    tokenizer.updateGrammarElements(grammar);
   };
 
-  const addBinaryOps = (grammarElements: Record<string, Omit<BinaryOpGrammarElement, 'type'>>) => {
-    adOps('binaryOp', grammarElements);
-  };
-
-  const addUnaryOps = (grammarElements: Record<string, Omit<UnaryOpGrammarElement, 'type'>>) => {
-    adOps('unaryOp', grammarElements);
+  const addUnaryOps = (unaryOps: Record<string, Omit<UnaryOpGrammarElement, 'type'>>) => {
+    grammar = { ...grammar, unaryOp: { ...grammar.unaryOp } };
+    Object.keys(unaryOps).forEach((key) => {
+      grammar.unaryOp[key] = { ...unaryOps[key], type: 'unaryOp' };
+    });
+    tokenizer.updateGrammarElements(grammar);
   };
 
   const addTransforms = (transforms: Record<string, Function>) => {
@@ -58,15 +51,15 @@ export default function Del() {
   };
 
   const removeOp = (operator: string) => {
-    const grammarElement = grammar.elements[operator];
-    if (grammarElement
-      && (grammarElement.type === 'binaryOp' || grammarElement.type === 'unaryOp')) {
+    if (grammar.binaryOp[operator] || grammar.unaryOp[operator]) {
       grammar = {
         ...grammar,
-        elements: { ...grammar.elements },
+        unaryOp: { ...grammar.unaryOp },
+        binaryOp: { ...grammar.binaryOp },
       };
-      delete grammar.elements[operator];
-      tokenizer.updateGrammarElements(grammar.elements);
+      delete grammar.unaryOp[operator];
+      delete grammar.binaryOp[operator];
+      tokenizer.updateGrammarElements(grammar);
     }
   };
 

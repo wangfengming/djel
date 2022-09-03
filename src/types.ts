@@ -26,18 +26,10 @@ export interface UnaryOpGrammarElement {
   fn: (left: any) => any;
 }
 
-export type GrammarElement =
-  | SymbolGrammarElement
-  | BinaryOpGrammarElement
-  | UnaryOpGrammarElement;
-
-export interface OpGrammarElements {
-  binaryOp: Omit<BinaryOpGrammarElement, 'type'>;
-  unaryOp: Omit<UnaryOpGrammarElement, 'type'>;
-}
-
 export interface Grammar {
-  elements: Record<string, GrammarElement>;
+  symbols: Record<string, SymbolGrammarElement>;
+  unaryOp: Record<string, UnaryOpGrammarElement>;
+  binaryOp: Record<string, BinaryOpGrammarElement>;
   transforms: Record<string, Function>;
 }
 

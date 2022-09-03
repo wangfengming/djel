@@ -6,17 +6,15 @@ import type {
   LambdaNode,
   Token,
   TokenType,
-  GrammarElement,
-  BinaryOpGrammarElement,
-  UnaryOpGrammarElement,
   StateType,
+  Grammar,
 } from '../types';
 import type { TokenHandlersKey } from './handlers';
 import { states } from './states';
 import { tokenHandlers } from './handlers';
 
 export class Parser {
-  _grammarElements: Record<string, GrammarElement>;
+  _grammar: Omit<Grammar, 'transforms'>;
   _exprStr: string;
   _stopMap: Partial<Record<TokenType, StateType>>;
 
@@ -29,11 +27,11 @@ export class Parser {
   _lambda?: boolean;
 
   constructor(
-    grammarElements: Record<string, GrammarElement>,
+    grammar: Omit<Grammar, 'transforms'>,
     prefix?: string,
     stopMap?: Record<string, StateType>,
   ) {
-    this._grammarElements = grammarElements;
+    this._grammar = grammar;
     this._exprStr = prefix || '';
     this._stopMap = stopMap || {};
     this._state = 'expectOperand';
@@ -112,7 +110,7 @@ export class Parser {
       this._parentStop = true;
       endStates = this._stopMap;
     }
-    this._subParser = new Parser(this._grammarElements, exprStr, endStates);
+    this._subParser = new Parser(this._grammar, exprStr, endStates);
   }
 
   _endSubExpression() {
@@ -124,15 +122,17 @@ export class Parser {
 
   _priority(priority: number) {
     let parent = this._cursor?._parent;
-    while (
-      parent &&
-      (parent.type === 'BinaryExpression' || parent.type === 'UnaryExpression') &&
-      parent.operator &&
-      (this._grammarElements[parent.operator] as BinaryOpGrammarElement | UnaryOpGrammarElement).priority >= priority) {
+    while (parent && this._getPriority(parent) >= priority) {
       this._cursor = parent;
       parent = parent._parent;
     }
     return parent;
+  }
+
+  _getPriority(ast: AstNode) {
+    if (ast.type === 'BinaryExpression') return this._grammar.binaryOp[ast.operator]?.priority || -1;
+    if (ast.type === 'UnaryExpression') return this._grammar.unaryOp[ast.operator]?.priority || -1;
+    return -1;
   }
 
   _maybeLambda(ast: AstNode) {

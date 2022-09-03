@@ -9,13 +9,13 @@ import type {
   ObjectLiteralNode,
   ConditionalExpressionNode,
   FunctionCallNode,
-  BinaryOpGrammarElement,
   Token,
   LiteralToken,
   IdentifierToken,
   UnaryOpToken,
   BinaryOpToken,
 } from '../types';
+import { INDEX_PRIORITY, PIPE_PRIORITY } from '../grammar';
 
 export const handlers = {
   arrayStart(this: Parser) {
@@ -35,7 +35,7 @@ export const handlers = {
     this._cursor = this._tree;
   },
   transform(this: Parser, token: Token) {
-    this._priority(100);
+    this._priority(PIPE_PRIORITY);
     const name = (token as IdentifierToken).value;
     this._placeBeforeCursor({
       type: 'FunctionCall',
@@ -68,7 +68,7 @@ export const subHandlers = {
     this._placeAtCursor(ast);
   },
   index(this: Parser, ast: AstNode) {
-    this._priority(10000);
+    this._priority(INDEX_PRIORITY);
     this._placeBeforeCursor({
       type: 'IndexExpression',
       left: this._cursor!,
@@ -102,7 +102,7 @@ export const tokenHandlers = {
     } as UnaryExpressionNode);
   },
   binaryOp(this: Parser, token: Token) {
-    const priority = (this._grammarElements[(token as BinaryOpToken).value] as BinaryOpGrammarElement).priority || 0;
+    const priority = this._grammar.binaryOp[(token as BinaryOpToken).value].priority || 0;
     const parent = this._priority(priority);
     const node = {
       type: 'BinaryExpression',

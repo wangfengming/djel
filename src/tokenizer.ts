@@ -1,53 +1,45 @@
-import type { GrammarElement, Token } from './types';
+import type { Grammar, Token } from './types';
 
-export function Tokenizer(grammarElements: Record<string, GrammarElement>) {
-  let _grammarElements = grammarElements;
+export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
+  let _grammar = grammar;
   let _regexp: RegExp | undefined;
 
   function getElements(str: string) {
-    if (!_regexp) _regexp = createRegexp(Object.keys(_grammarElements));
+    if (!_regexp) {
+      const tokenNames = Object.keys(_grammar.symbols)
+        .concat(Object.keys(_grammar.binaryOp))
+        .concat(Object.keys(_grammar.unaryOp));
+      _regexp = createRegexp(tokenNames);
+    }
     const elements = str.split(_regexp).filter((i) => i);
     return elements;
   }
 
   function getTokens(elements: string[]) {
     const tokens: Token[] = [];
-    let negate = false;
 
     elements.forEach((element) => {
       if (/^\s*$/.test(element)) { // is whitespace
         if (tokens.length) tokens[tokens.length - 1].raw += element;
       } else if (element.startsWith('#')) { // is comment
         return;
-      } else if (element === '-' && isNegative(tokens)) {
-        negate = true;
       } else {
-        if (negate) {
-          element = `-${element}`;
-          negate = false;
-        }
-        const token = createToken(element, _grammarElements);
+        const token = createToken(element, _grammar, isPreferUnaryOp(tokens));
         tokens.push(token);
       }
     });
-
-    if (negate) {
-      const token = createToken('-', _grammarElements);
-      tokens.push(token);
-    }
 
     return tokens;
   }
 
   const tokenize = (str: string) => {
-    if (!_regexp) _regexp = createRegexp(Object.keys(_grammarElements));
     const elements = getElements(str);
     const tokens = getTokens(elements);
     return tokens;
   };
 
-  const updateGrammarElements = (newGrammarElements: Record<string, GrammarElement>) => {
-    _grammarElements = newGrammarElements;
+  const updateGrammarElements = (newGrammar: Omit<Grammar, 'transforms'>) => {
+    _grammar = newGrammar;
     _regexp = undefined;
   };
 
@@ -61,7 +53,7 @@ export function Tokenizer(grammarElements: Record<string, GrammarElement>) {
 
 const ID_REGEX = /^[a-zA-Z_$][a-zA-Z\d_$]*$|^@\d?$/;
 
-function createToken(element: string, grammar: Record<string, GrammarElement>) {
+function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, preferUnaryOp: boolean) {
   const token: Token = {
     type: 'literal',
     value: element,
@@ -74,8 +66,10 @@ function createToken(element: string, grammar: Record<string, GrammarElement>) {
     token.value = parseFloat(element);
   } else if (element === 'true' || element === 'false') {
     token.value = element === 'true';
-  } else if (grammar[element]) {
-    token.type = grammar[element].type;
+  } else if (grammar.symbols[element]) {
+    token.type = grammar.symbols[element].type;
+  } else if (grammar.binaryOp[element] || grammar.unaryOp[element]) {
+    token.type = preferUnaryOp && grammar.unaryOp[element] ? 'unaryOp' : 'binaryOp';
   } else if (element.match(ID_REGEX)) {
     token.type = 'identifier';
   } else {
@@ -85,7 +79,7 @@ function createToken(element: string, grammar: Record<string, GrammarElement>) {
   return token;
 }
 
-function isNegative(tokens: Token[]) {
+function isPreferUnaryOp(tokens: Token[]) {
   if (!tokens.length) return true;
   const lastTokenType = tokens[tokens.length - 1].type;
   return [
@@ -95,6 +89,7 @@ function isNegative(tokens: Token[]) {
     'openBracket',
     'question',
     'colon',
+    'comma',
   ].some((type) => type === lastTokenType);
 }
 

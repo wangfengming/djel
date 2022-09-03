@@ -9,8 +9,8 @@ describe('Parser', () => {
 
   beforeEach(() => {
     let grammar = getGrammar();
-    tokenizer = Tokenizer(grammar.elements);
-    parser = new Parser(grammar.elements);
+    tokenizer = Tokenizer(grammar);
+    parser = new Parser(grammar);
   });
 
   it('should construct an AST for 1+2', () => {

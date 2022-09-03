@@ -9,11 +9,11 @@ describe('Evaluator', () => {
   let tokenizer: ReturnType<typeof Tokenizer>;
   beforeEach(() => {
     grammar = getGrammar();
-    tokenizer = Tokenizer(grammar.elements);
+    tokenizer = Tokenizer(grammar);
   });
 
   function toTree(exp: string) {
-    const p = new Parser(grammar.elements);
+    const p = new Parser(grammar);
     p.addTokens(tokenizer.tokenize(exp));
     return p.complete();
   }
@@ -106,9 +106,8 @@ describe('Evaluator', () => {
     };
     const sum = <T>(arr: T[], by: (i: T) => number) => arr.reduce((n, i) => n + (by(i) || 0), 0);
     const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, sum } }, context);
-    expect(e
-      .evaluate(toTree('foo.bar|sum(@.x)')),
-    ).to.equal(6);
+    const ast = toTree('-(foo.bar|sum(@.x))');
+    expect(e.evaluate(ast)).to.equal(-6);
   });
   it('should make array elements addressable by index', () => {
     const context = {
