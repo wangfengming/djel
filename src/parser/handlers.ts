@@ -2,7 +2,6 @@ import type { Parser } from './index';
 import type {
   AstNode,
   LiteralNode,
-  IdentifierNode,
   UnaryExpressionNode,
   BinaryExpressionNode,
   ArrayLiteralNode,
@@ -47,7 +46,7 @@ export const handlers = {
 
 export const subHandlers = {
   arrayVal(this: Parser, ast?: AstNode) {
-    if (ast) (this._cursor as ArrayLiteralNode)?.value.push(ast);
+    if (ast) (this._cursor as ArrayLiteralNode).value.push(ast);
   },
   objVal(this: Parser, ast: AstNode) {
     (this._cursor as ObjectLiteralNode).value[this._curObjKey!] = ast;
@@ -58,11 +57,11 @@ export const subHandlers = {
   ternaryEnd(this: Parser, ast: AstNode) {
     (this._cursor as ConditionalExpressionNode).alternate = ast;
   },
-  lambdaTransform(this: Parser, ast: AstNode) {
+  exprTransform(this: Parser, ast: AstNode) {
     (this._cursor as FunctionCallNode).expr = this._maybeLambda(ast);
   },
   argVal(this: Parser, ast: AstNode) {
-    (this._cursor as FunctionCallNode)?.args.push(this._maybeLambda(ast));
+    (this._cursor as FunctionCallNode).args.push(this._maybeLambda(ast));
   },
   subExpression(this: Parser, ast: AstNode) {
     this._placeAtCursor(ast);
@@ -85,12 +84,10 @@ export const tokenHandlers = {
   },
   identifier(this: Parser, token: Token) {
     const identifier = (token as IdentifierToken).value;
-    const argMatch = identifier.match(/@(\d?)/);
     let node: AstNode = { type: 'Identifier', value: identifier };
-    if (argMatch) {
-      (node as IdentifierNode).argIndex = +argMatch[1];
+    if (identifier.match(/@(\d?)/)) {
       this._lambda = true;
-    } else if (this._cursor?.type === 'BinaryExpression' && this._cursor.operator === '.') {
+    } else if (this._cursor && this._cursor.type === 'BinaryExpression' && this._cursor.operator === '.') {
       node = { type: 'Literal', value: identifier } as LiteralNode;
     }
     this._placeAtCursor(node);
@@ -102,7 +99,7 @@ export const tokenHandlers = {
     } as UnaryExpressionNode);
   },
   binaryOp(this: Parser, token: Token) {
-    const priority = this._grammar.binaryOp[(token as BinaryOpToken).value].priority || 0;
+    const priority = this._grammar.binaryOps[(token as BinaryOpToken).value].priority || 0;
     const parent = this._priority(priority);
     const node = {
       type: 'BinaryExpression',

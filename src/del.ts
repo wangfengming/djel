@@ -1,4 +1,4 @@
-import type { BinaryOpGrammarElement, UnaryOpGrammarElement } from './types';
+import type { BinaryOpGrammar, UnaryOpGrammar } from './types';
 import { getGrammar } from './grammar';
 import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
@@ -16,31 +16,25 @@ export default function Del() {
     const ast = parser.complete();
     return {
       _ast: ast,
-      evaluate(context?: Record<string, any>): T {
+      evaluate(context?: any): T {
         const evaluator = Evaluator(_grammar, context);
         return evaluator.evaluate(ast);
       },
     };
   };
 
-  const evaluate = <T = any>(exp: string, context?: Record<string, any>) => {
+  const evaluate = <T = any>(exp: string, context?: any) => {
     return compile<T>(exp).evaluate(context);
   };
 
-  const addBinaryOps = (binaryOps: Record<string, Omit<BinaryOpGrammarElement, 'type'>>) => {
-    grammar = { ...grammar, binaryOp: { ...grammar.binaryOp } };
-    Object.keys(binaryOps).forEach((key) => {
-      grammar.binaryOp[key] = { ...binaryOps[key], type: 'binaryOp' };
-    });
-    tokenizer.updateGrammarElements(grammar);
+  const addBinaryOps = (binaryOps: Record<string, BinaryOpGrammar>) => {
+    grammar = { ...grammar, binaryOps: { ...grammar.binaryOps, ...binaryOps } };
+    tokenizer.updateGrammar(grammar);
   };
 
-  const addUnaryOps = (unaryOps: Record<string, Omit<UnaryOpGrammarElement, 'type'>>) => {
-    grammar = { ...grammar, unaryOp: { ...grammar.unaryOp } };
-    Object.keys(unaryOps).forEach((key) => {
-      grammar.unaryOp[key] = { ...unaryOps[key], type: 'unaryOp' };
-    });
-    tokenizer.updateGrammarElements(grammar);
+  const addUnaryOps = (unaryOps: Record<string, UnaryOpGrammar>) => {
+    grammar = { ...grammar, unaryOps: { ...grammar.unaryOps, ...unaryOps } };
+    tokenizer.updateGrammar(grammar);
   };
 
   const addTransforms = (transforms: Record<string, Function>) => {
@@ -51,15 +45,15 @@ export default function Del() {
   };
 
   const removeOp = (operator: string) => {
-    if (grammar.binaryOp[operator] || grammar.unaryOp[operator]) {
+    if (grammar.binaryOps[operator] || grammar.unaryOps[operator]) {
       grammar = {
         ...grammar,
-        unaryOp: { ...grammar.unaryOp },
-        binaryOp: { ...grammar.binaryOp },
+        unaryOps: { ...grammar.unaryOps },
+        binaryOps: { ...grammar.binaryOps },
       };
-      delete grammar.unaryOp[operator];
-      delete grammar.binaryOp[operator];
-      tokenizer.updateGrammarElements(grammar);
+      delete grammar.unaryOps[operator];
+      delete grammar.binaryOps[operator];
+      tokenizer.updateGrammar(grammar);
     }
   };
 

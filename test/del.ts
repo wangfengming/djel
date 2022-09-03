@@ -11,7 +11,7 @@ describe('Del', () => {
     expect(del.evaluate('2+2')).to.equal(4);
   });
   it('should throw', () => {
-    expect(() => del.evaluate('2++2')).to.throw;
+    expect(() => del.evaluate('2**2')).to.throw();
   });
   it('should allow transforms to be defined', () => {
     del.addTransforms({
@@ -35,7 +35,7 @@ describe('Del', () => {
     });
     expect(del.evaluate('2|add1')).to.equal(3);
     del.removeTransform('add1');
-    expect(() => del.evaluate('2|add1')).to.throw;
+    expect(() => del.evaluate('2|add1')).to.throw();
   });
   it('should pass context', () => {
     expect(del.evaluate('foo', { foo: 'bar' })).to.equal('bar');
@@ -76,11 +76,16 @@ describe('Del', () => {
   });
   it('should allow binaryOps to be removed', () => {
     del.removeOp('+');
-    expect(expect(() => del.evaluate('1+2'))).to.throw;
+    expect(() => del.evaluate('1+2')).to.throw();
   });
   it('should allow unaryOps to be removed', () => {
     del.removeOp('!');
-    expect(expect(() => del.evaluate('!true'))).to.throw;
+    expect(() => del.evaluate('!true')).to.throw();
+  });
+  it('should allow compile result to be reused', () => {
+    const expr = del.compile('{x: y, y: x}');
+    expect(expr.evaluate({ x: 1, y: 2 })).to.deep.equal({ x: 2, y: 1 });
+    expect(expr.evaluate({ x: 3, y: 4 })).to.deep.equal({ x: 4, y: 3 });
   });
 
   describe('Grammars', () => {

@@ -32,89 +32,72 @@ export const getGrammar = (): Grammar => ({
     ')': { type: 'closeParen' },
     '?': { type: 'question' },
   },
-  binaryOp: {
+  binaryOps: {
     '.': {
-      type: 'binaryOp',
       priority: 100,
-      fn: (left, right) => left?.[right],
+      fn: (left, right) => left != null ? left[right] : undefined,
     },
     '+': {
-      type: 'binaryOp',
       priority: 50,
       fn: (left, right) => left + right,
     },
     '-': {
-      type: 'binaryOp',
       priority: 50,
       fn: (left, right) => left - right,
     },
     '*': {
-      type: 'binaryOp',
       priority: 60,
       fn: (left, right) => left * right,
     },
     '/': {
-      type: 'binaryOp',
       priority: 60,
       fn: (left, right) => left / right,
     },
     '//': {
-      type: 'binaryOp',
       priority: 60,
       fn: (left, right) => Math.floor(left / right),
     },
     '%': {
-      type: 'binaryOp',
       priority: 60,
       fn: (left, right) => left % right,
     },
     '^': {
-      type: 'binaryOp',
       priority: 70,
       fn: (left, right) => Math.pow(left, right),
     },
     '==': {
-      type: 'binaryOp',
       priority: 30,
       fn: (left, right) => left == right,
     },
     '!=': {
-      type: 'binaryOp',
       priority: 30,
       fn: (left, right) => left != right,
     },
     '>': {
-      type: 'binaryOp',
       priority: 40,
       fn: (left, right) => left > right,
     },
     '>=': {
-      type: 'binaryOp',
       priority: 40,
       fn: (left, right) => left >= right,
     },
     '<': {
-      type: 'binaryOp',
       priority: 40,
       fn: (left, right) => left < right,
     },
     '<=': {
-      type: 'binaryOp',
       priority: 40,
       fn: (left, right) => left <= right,
     },
     '&&': {
-      type: 'binaryOp',
       priority: 20,
       fn: (left, right) => left && right,
     },
     '||': {
-      type: 'binaryOp',
       priority: 10,
       fn: (left, right) => left || right,
     },
     in: {
-      type: 'binaryOp',
       priority: 40,
       fn: (left, right) => {
         if (typeof right === 'string') {
@@ -127,19 +110,16 @@ export const getGrammar = (): Grammar => ({
       },
     },
   },
-  unaryOp: {
+  unaryOps: {
     '!': {
-      type: 'unaryOp',
       priority: 90,
       fn: (right) => !right,
     },
     '-': {
-      type: 'unaryOp',
       priority: 90,
       fn: (right) => -right || 0,
     },
     '+': {
-      type: 'unaryOp',
       priority: 90,
       fn: (right) => +right || 0,
     },

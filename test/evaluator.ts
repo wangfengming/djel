@@ -66,7 +66,7 @@ describe('Evaluator', () => {
   it('should throw if apply invalid transforms', () => {
     const e = Evaluator(grammar);
     const tree = toTree('1|test');
-    expect(() => e.evaluate(tree)).to.throw;
+    expect(() => e.evaluate(tree)).to.throw();
   });
   it('should apply data function transforms', () => {
     const context = { foo: 10, half: (v: number) => v / 2 };
@@ -132,7 +132,7 @@ describe('Evaluator', () => {
   });
   it('should throw when transform does not exist', () => {
     const e = Evaluator(grammar);
-    return expect(() => e.evaluate(toTree('"hello"|world'))).to.throw;
+    return expect(() => e.evaluate(toTree('"hello"|world'))).to.throw();
   });
   it('should apply the DivFloor operator', () => {
     const e = Evaluator(grammar);

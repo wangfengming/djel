@@ -13,22 +13,23 @@ import type {
   Grammar,
 } from './types';
 
-export function Evaluator(grammar: Grammar, context?: Record<string, any>) {
+export function Evaluator(grammar: Grammar, context?: any) {
   const handlers = {
     Literal: (ast: LiteralNode) => ast.value,
-    Identifier: (ast: IdentifierNode) => context?.[ast.value],
+    Identifier: (ast: IdentifierNode) => context != null ? context[ast.value] : undefined,
     UnaryExpression: (ast: UnaryExpressionNode) => {
-      const element = grammar.unaryOp[ast.operator];
-      return element.fn(evaluate(ast.right));
+      return grammar.unaryOps[ast.operator].fn(evaluate(ast.right));
     },
     BinaryExpression: (ast: BinaryExpressionNode) => {
-      const element = grammar.binaryOp[ast.operator];
-      return element.fn(evaluate(ast.left), evaluate(ast.right));
+      return grammar.binaryOps[ast.operator].fn(evaluate(ast.left), evaluate(ast.right));
     },
-    IndexExpression: (ast: IndexExpressionNode) => evaluate(ast.left)?.[evaluate(ast.right)],
+    IndexExpression: (ast: IndexExpressionNode) => {
+      const left = evaluate(ast.left);
+      return left != null ? left[evaluate(ast.right)] : undefined;
+    },
     ArrayLiteral: (ast: ArrayLiteralNode) => ast.value.map((item) => evaluate(item)),
     ObjectLiteral: (ast: ObjectLiteralNode) => {
-      const result: Record<string, any> = {};
+      const result: any = {};
       Object.keys(ast.value).forEach((key) => {
         result[key] = evaluate(ast.value[key]);
       });

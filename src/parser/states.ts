@@ -43,7 +43,7 @@ export const states: Record<StateType, State> = {
   expectTransform: {
     tokenTypes: {
       identifier: { toState: 'postTransform', handler: handlers.transform },
-      openParen: { toState: 'lambdaTransform', handler: handlers.transform },
+      openParen: { toState: 'exprTransform', handler: handlers.transform },
     },
   },
   postTransform: {
@@ -55,8 +55,8 @@ export const states: Record<StateType, State> = {
     },
     completable: true,
   },
-  lambdaTransform: {
-    subHandler: subHandlers.lambdaTransform,
+  exprTransform: {
+    subHandler: subHandlers.exprTransform,
     endStates: {
       closeParen: 'postTransformArgs',
     },

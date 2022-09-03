@@ -6,7 +6,7 @@
   "module": "dist/bundle.es.js",
   "types": "lib/del.d.ts",
   "scripts": {
-    "build": "rollup -c rollup.config.js && tsc --project tsconfig-build.json",
+    "build": "rm -rf dist lib && rollup -c rollup.config.js && tsc --project tsconfig-build.json",
     "test": "nyc --reporter=html --reporter=text mocha --require ts-node/register --extension .ts --recursive test"
   },
   "keywords": [],

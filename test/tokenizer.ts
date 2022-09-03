@@ -234,6 +234,6 @@ describe('tokenizer', () => {
   });
 
   it('should throw with invalid token', () => {
-    expect(() => tokenizer.tokenize('~')).to.throw;
+    expect(() => tokenizer.tokenize('~')).to.throw();
   });
 });

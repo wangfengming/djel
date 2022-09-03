@@ -52,7 +52,7 @@ export class Parser {
         if (this._parentStop) return stopState;
         this._state = stopState;
       }
-    } else if (state.tokenTypes?.[token.type]) {
+    } else if (state.tokenTypes && state.tokenTypes[token.type]) {
       const tokenType = state.tokenTypes[token.type]!;
       if (tokenType.handler) {
         tokenType.handler.call(this, token);
@@ -115,13 +115,13 @@ export class Parser {
 
   _endSubExpression() {
     const ast = this._subParser!.complete();
-    if (ast?._lambda) this._lambda = true;
+    if (ast && ast._lambda) this._lambda = true;
     states[this._state].subHandler!.call(this, ast);
     this._subParser = undefined;
   }
 
   _priority(priority: number) {
-    let parent = this._cursor?._parent;
+    let parent = this._cursor && this._cursor._parent;
     while (parent && this._getPriority(parent) >= priority) {
       this._cursor = parent;
       parent = parent._parent;
@@ -130,8 +130,12 @@ export class Parser {
   }
 
   _getPriority(ast: AstNode) {
-    if (ast.type === 'BinaryExpression') return this._grammar.binaryOp[ast.operator]?.priority || -1;
-    if (ast.type === 'UnaryExpression') return this._grammar.unaryOp[ast.operator]?.priority || -1;
+    if (ast.type === 'BinaryExpression') {
+      return this._grammar.binaryOps[ast.operator].priority || -1;
+    }
+    if (ast.type === 'UnaryExpression') {
+      return this._grammar.unaryOps[ast.operator].priority || -1;
+    }
     return -1;
   }
 

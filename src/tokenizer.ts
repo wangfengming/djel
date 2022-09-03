@@ -7,8 +7,8 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
   function getElements(str: string) {
     if (!_regexp) {
       const tokenNames = Object.keys(_grammar.symbols)
-        .concat(Object.keys(_grammar.binaryOp))
-        .concat(Object.keys(_grammar.unaryOp));
+        .concat(Object.keys(_grammar.binaryOps))
+        .concat(Object.keys(_grammar.unaryOps));
       _regexp = createRegexp(tokenNames);
     }
     const elements = str.split(_regexp).filter((i) => i);
@@ -38,14 +38,14 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
     return tokens;
   };
 
-  const updateGrammarElements = (newGrammar: Omit<Grammar, 'transforms'>) => {
+  const updateGrammar = (newGrammar: Omit<Grammar, 'transforms'>) => {
     _grammar = newGrammar;
     _regexp = undefined;
   };
 
   return {
     tokenize,
-    updateGrammarElements,
+    updateGrammar,
     getElements,
     getTokens,
   };
@@ -68,12 +68,12 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
     token.value = element === 'true';
   } else if (grammar.symbols[element]) {
     token.type = grammar.symbols[element].type;
-  } else if (grammar.binaryOp[element] || grammar.unaryOp[element]) {
-    token.type = preferUnaryOp && grammar.unaryOp[element] ? 'unaryOp' : 'binaryOp';
+  } else if (grammar.binaryOps[element] || grammar.unaryOps[element]) {
+    token.type = preferUnaryOp && grammar.unaryOps[element] ? 'unaryOp' : 'binaryOp';
   } else if (element.match(ID_REGEX)) {
     token.type = 'identifier';
   } else {
-    console.warn(`Invalid expression token: ${element}`);
+    throw new Error(`Invalid expression token: ${element}`);
   }
 
   return token;

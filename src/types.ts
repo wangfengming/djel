@@ -1,6 +1,6 @@
 import type { Parser } from './parser';
 
-export interface SymbolGrammarElement {
+export interface SymbolGrammar {
   type:
     | 'openBracket'
     | 'closeBracket'
@@ -14,22 +14,20 @@ export interface SymbolGrammarElement {
     | 'question';
 }
 
-export interface BinaryOpGrammarElement {
-  type: 'binaryOp';
+export interface BinaryOpGrammar {
   priority: number;
   fn: (left: any, right: any) => any;
 }
 
-export interface UnaryOpGrammarElement {
-  type: 'unaryOp';
+export interface UnaryOpGrammar {
   priority: number;
   fn: (left: any) => any;
 }
 
 export interface Grammar {
-  symbols: Record<string, SymbolGrammarElement>;
-  unaryOp: Record<string, UnaryOpGrammarElement>;
-  binaryOp: Record<string, BinaryOpGrammarElement>;
+  symbols: Record<string, SymbolGrammar>;
+  unaryOps: Record<string, UnaryOpGrammar>;
+  binaryOps: Record<string, BinaryOpGrammar>;
   transforms: Record<string, Function>;
 }
 
@@ -124,7 +122,6 @@ export interface LiteralNode extends AstNodeBase {
 export interface IdentifierNode extends AstNodeBase {
   type: 'Identifier';
   value: string;
-  argIndex?: number;
 }
 
 export interface BinaryExpressionNode extends AstNodeBase {
@@ -184,7 +181,7 @@ export type StateType =
   | 'index'
   | 'expectTransform'
   | 'postTransform'
-  | 'lambdaTransform'
+  | 'exprTransform'
   | 'postTransformArgs'
   | 'subExpression'
   | 'argVal'

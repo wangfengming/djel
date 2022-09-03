@@ -330,7 +330,7 @@ describe('Parser', () => {
             left: {
               type: 'BinaryExpression',
               operator: '.',
-              left: { type: 'Identifier', value: '@', argIndex: 0 },
+              left: { type: 'Identifier', value: '@' },
               right: { type: 'Literal', value: 'x' },
             },
             right: { type: 'Literal', value: 1 },
@@ -373,7 +373,7 @@ describe('Parser', () => {
               left: {
                 type: 'BinaryExpression',
                 operator: '.',
-                left: { type: 'Identifier', value: '@1', argIndex: 1 },
+                left: { type: 'Identifier', value: '@1' },
                 right: { type: 'Literal', value: 'x' },
               },
               right: { type: 'Literal', value: 1 },
@@ -542,13 +542,13 @@ describe('Parser', () => {
   it('should throw if addToken after complete', () => {
     parser.addTokens(tokenizer.tokenize('a.b == c.d'));
     parser.complete();
-    expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to.throw;
+    expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to.throw();
   });
   it('should throw if add unexpected token', () => {
-    expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to.throw;
+    expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to.throw();
   });
   it('should throw if token is not complete', () => {
     parser.addTokens(tokenizer.tokenize('a.b == c.d +'));
-    expect(() => parser.complete()).to.throw;
+    expect(() => parser.complete()).to.throw();
   });
 });
