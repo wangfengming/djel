@@ -56,7 +56,10 @@ export function Evaluator(grammar: Grammar, context?: any) {
      *      node
      */
     BinaryExpression: (ast: BinaryExpressionNode) => {
-      return grammar.binaryOps[ast.operator].fn(evaluate(ast.left), evaluate(ast.right));
+      const binaryOp = grammar.binaryOps[ast.operator];
+      return binaryOp.delay
+        ? binaryOp.fn(evaluate(ast.left), () => evaluate(ast.right))
+        : binaryOp.fn(evaluate(ast.left), evaluate(ast.right));
     },
     /**
      * Evaluates a IndexExpression by applying it to the subject value.
@@ -109,13 +112,13 @@ export function Evaluator(grammar: Grammar, context?: any) {
      * @param ast An expression tree with a Transform as the top node
      */
     FunctionCall: (ast: FunctionCallNode) => {
-      const args = ast.args.map((item) => evaluate(item));
       const fn = ast.expr
         ? evaluate(ast.expr)
         : grammar.transforms[ast.name!];
       if (!fn) {
         throw new Error(`Cannot find transform ${ast.name}`);
       }
+      const args = ast.args.map((item) => evaluate(item));
       return fn(...args);
     },
     /**

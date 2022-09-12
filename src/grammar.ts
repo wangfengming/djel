@@ -43,7 +43,7 @@ export const getGrammar = (): Grammar => ({
     '+': {
       priority: 50,
       fn: (left, right) => {
-        if (Array.isArray(left) && Array.isArray(right)) return left.concat(right);
+        if (Array.isArray(left)) return left.concat(right);
         return left + right;
       },
     },
@@ -97,11 +97,13 @@ export const getGrammar = (): Grammar => ({
     },
     '&&': {
       priority: 20,
-      fn: (left, right) => left && right,
+      delay: true,
+      fn: (left, right) => left && right(),
     },
     '||': {
       priority: 10,
-      fn: (left, right) => left || right,
+      delay: true,
+      fn: (left, right) => left || right(),
     },
     in: {
       priority: 40,

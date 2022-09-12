@@ -16,7 +16,14 @@ export interface SymbolGrammar {
 
 export interface BinaryOpGrammar {
   priority: number;
+  delay?: false;
   fn: (left: any, right: any) => any;
+}
+
+export interface DelayBinaryOpGrammar {
+  priority: number;
+  delay: true;
+  fn: (left: any, right: () => any) => any;
 }
 
 export interface UnaryOpGrammar {
@@ -27,7 +34,7 @@ export interface UnaryOpGrammar {
 export interface Grammar {
   symbols: Record<string, SymbolGrammar>;
   unaryOps: Record<string, UnaryOpGrammar>;
-  binaryOps: Record<string, BinaryOpGrammar>;
+  binaryOps: Record<string, BinaryOpGrammar | DelayBinaryOpGrammar>;
   transforms: Record<string, Function>;
 }
 

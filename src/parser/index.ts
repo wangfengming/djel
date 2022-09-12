@@ -222,6 +222,8 @@ export class Parser {
    * otherwise return the original node.
    */
   _maybeLambda(ast: AstNode) {
-    return ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
+    const result = ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
+    this._lambda = false;
+    return result;
   }
 }

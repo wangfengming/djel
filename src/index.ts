@@ -1,10 +1,10 @@
-import type { BinaryOpGrammar, UnaryOpGrammar } from './types';
+import type { BinaryOpGrammar, DelayBinaryOpGrammar, UnaryOpGrammar } from './types';
 import { getGrammar } from './grammar';
 import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
 import { Evaluator } from './evaluator';
 
-export type { BinaryOpGrammar, UnaryOpGrammar } from './types';
+export type { BinaryOpGrammar, DelayBinaryOpGrammar, UnaryOpGrammar } from './types';
 
 /**
  * Djel is the Dynamic Javascript Expression Language, capable of parsing and
@@ -61,7 +61,7 @@ export default function Djel() {
    * precedence values in order to choose the appropriate precedence for the
    * new operator.
    */
-  const addBinaryOps = (binaryOps: Record<string, BinaryOpGrammar>) => {
+  const addBinaryOps = (binaryOps: Record<string, BinaryOpGrammar | DelayBinaryOpGrammar>) => {
     grammar = { ...grammar, binaryOps: { ...grammar.binaryOps, ...binaryOps } };
     tokenizer.updateGrammar(grammar);
   };
