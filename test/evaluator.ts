@@ -53,8 +53,8 @@ describe('Evaluator', () => {
   it('should apply lambda transforms', () => {
     const context = { foo: 10 };
     const e = Evaluator(grammar, context);
-    const tree = toTree('foo|(@/2) + 3');
-    expect(e.evaluate(tree)).to.equal(8);
+    const tree = toTree('foo|(@>10)?"large":"small"');
+    expect(e.evaluate(tree)).to.equal('small');
   });
   it('should apply complex lambda transforms', () => {
     const context = { foo: 10 };
@@ -64,8 +64,8 @@ describe('Evaluator', () => {
   });
   it('should apply lambda transforms with args', () => {
     const e = Evaluator(grammar);
-    const tree = toTree('(1+2+3)|((@1+@)/(@1-@))(4+5+6) + 3');
-    expect(e.evaluate(tree)).to.equal((15 + 6) / (15 - 6) + 3);
+    const tree = toTree('(1+2+3)|(@>@1)(4+5+6)?"great":"small"');
+    expect(e.evaluate(tree)).to.equal('small');
   });
   it('should throw if apply invalid transforms', () => {
     const e = Evaluator(grammar);
@@ -130,6 +130,10 @@ describe('Evaluator', () => {
     const e = Evaluator(grammar, context);
     return expect(e.evaluate(toTree('foo.bar["baz"].tok'))).to.equal(undefined);
   });
+  it('should allow index on string literal', () => {
+    const e = Evaluator(grammar);
+    return expect(e.evaluate(toTree('"abc"[0]'))).to.equal('a');
+  });
   it('should throw when transform does not exist', () => {
     const e = Evaluator(grammar);
     return expect(() => e.evaluate(toTree('"hello"|world'))).to.throw();
@@ -145,6 +149,10 @@ describe('Evaluator', () => {
   it('should evaluate an empty object literal', () => {
     const e = Evaluator(grammar);
     expect(e.evaluate(toTree('{}'))).to.deep.equal({});
+  });
+  it('should evaluate an object with expression key', () => {
+    const e = Evaluator(grammar);
+    expect(e.evaluate(toTree('{["a"+1]:1}'))).to.deep.equal({ a1: 1 });
   });
   it('should evaluate a transform with multiple args', () => {
     const concat = (val: string, a1: string, a2: string, a3: string) => {

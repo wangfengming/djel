@@ -152,7 +152,7 @@ export interface IndexExpressionNode extends AstNodeBase {
 
 export interface ObjectLiteralNode extends AstNodeBase {
   type: 'ObjectLiteral';
-  value: Record<string, AstNode>;
+  entries: { key: AstNode; value: AstNode }[];
 }
 
 export interface ArrayLiteralNode extends AstNodeBase {
@@ -184,14 +184,13 @@ export type StateType =
   | 'expectBinOp'
   | 'expectObjKey'
   | 'expectKeyValSep'
-  | 'identifier'
   | 'index'
   | 'expectTransform'
   | 'postTransform'
   | 'exprTransform'
-  | 'postTransformArgs'
   | 'subExpression'
   | 'argVal'
+  | 'objKey'
   | 'objVal'
   | 'arrayVal'
   | 'ternaryMid'

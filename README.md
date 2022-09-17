@@ -129,7 +129,7 @@ The `in` operator can be used to check for a substring:
 `"Cad" in "Ron Cadillac"`, and it can be used to check for an array element:
 `"coarse" in ['fine', 'medium', 'coarse']`.
 
-However, the `==` operator is used
+However, the `===` operator is used
 behind-the-scenes to search arrays, so it should not be used with arrays of
 objects.
 The following expression returns false: `{a: 'b'} in [{a: 'b'}]`.

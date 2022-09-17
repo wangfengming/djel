@@ -147,36 +147,65 @@ describe('Parser', () => {
     parser.addTokens(tokenizer.tokenize('{foo: "bar", tek: 1+2}'));
     expect(parser.complete()).to.deep.equal({
       type: 'ObjectLiteral',
-      value: {
-        foo: { type: 'Literal', value: 'bar' },
-        tek: {
-          type: 'BinaryExpression',
-          operator: '+',
-          left: { type: 'Literal', value: 1 },
-          right: { type: 'Literal', value: 2 },
+      entries: [
+        {
+          key: { type: 'Literal', value: 'foo' },
+          value: { type: 'Literal', value: 'bar' },
         },
-      },
+        {
+          key: { type: 'Literal', value: 'tek' },
+          value: {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: { type: 'Literal', value: 1 },
+            right: { type: 'Literal', value: 2 },
+          },
+        },
+      ],
     });
   });
   it('should handle nested object literals', () => {
     parser.addTokens(tokenizer.tokenize('{foo: {bar: "tek"}}'));
     expect(parser.complete()).to.deep.equal({
       type: 'ObjectLiteral',
-      value: {
-        foo: {
-          type: 'ObjectLiteral',
+      entries: [
+        {
+          key: { type: 'Literal', value: 'foo' },
           value: {
-            bar: { type: 'Literal', value: 'tek' },
+            type: 'ObjectLiteral',
+            entries: [
+              {
+                key: { type: 'Literal', value: 'bar' },
+                value: { type: 'Literal', value: 'tek' },
+              },
+            ],
           },
         },
-      },
+      ],
     });
   });
   it('should handle empty object literals', () => {
     parser.addTokens(tokenizer.tokenize('{}'));
     expect(parser.complete()).to.deep.equal({
       type: 'ObjectLiteral',
-      value: {},
+      entries: [],
+    });
+  });
+  it('should handle object with expression key', () => {
+    parser.addTokens(tokenizer.tokenize('{["a"+1]:1}'));
+    expect(parser.complete()).to.deep.equal({
+      type: 'ObjectLiteral',
+      entries: [
+        {
+          key: {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: { type: 'Literal', value: 'a' },
+            right: { type: 'Literal', value: 1 },
+          },
+          value: { type: 'Literal', value: 1 },
+        },
+      ],
     });
   });
   it('should handle array literals', () => {
@@ -293,9 +322,12 @@ describe('Parser', () => {
         },
         {
           type: 'ObjectLiteral',
-          value: {
-            bar: { type: 'Literal', value: 'tek' },
-          },
+          entries: [
+            {
+              key: { type: 'Literal', value: 'bar' },
+              value: { type: 'Literal', value: 'tek' },
+            },
+          ],
         },
       ],
     });
@@ -432,9 +464,12 @@ describe('Parser', () => {
         operator: '.',
         left: {
           type: 'ObjectLiteral',
-          value: {
-            foo: { type: 'Literal', value: 'bar' },
-          },
+          entries: [
+            {
+              key: { type: 'Literal', value: 'foo' },
+              value: { type: 'Literal', value: 'bar' },
+            },
+          ],
         },
         right: { type: 'Literal', value: 'foo' },
       },
@@ -513,9 +548,12 @@ describe('Parser', () => {
       test: { type: 'Identifier', value: 'foo' },
       consequent: {
         type: 'ObjectLiteral',
-        value: {
-          bar: { type: 'Literal', value: 'tek' },
-        },
+        entries: [
+          {
+            key: { type: 'Literal', value: 'bar' },
+            value: { type: 'Literal', value: 'tek' },
+          },
+        ],
       },
       alternate: { type: 'Literal', value: 'baz' },
     });

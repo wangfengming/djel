@@ -11,14 +11,12 @@ import { handlers, subHandlers } from './handlers';
  * any unexpected token types will generate a thrown error) to an options
  * object that defines how they're handled.  The available options are:
  *
- *      {string} toState: The name of the state to which to transition
- *          immediately after handling this token
- *      {string} handler: The handler function to call when this token type is
- *          encountered in this state.  If omitted, the default handler
- *          matching the token's "type" property will be called. If the handler
- *          function does not exist, no call will be made and no error will be
- *          generated.  This is useful for tokens whose sole purpose is to
- *          transition to other states.
+ *   {string} toState: The name of the state to which to transition immediately
+ *      after handling this token
+ *   {string} handler: The handler function to call when this token type is
+ *      encountered in this state. If the handler function does not exist,
+ *      no call will be made and no error will be generated. This is useful
+ *      for tokens whose sole purpose is to transition to other states.
  *
  * States that consume a subexpression should define a subHandler, the
  * function to be called with an expression tree argument when the
@@ -34,9 +32,9 @@ import { handlers, subHandlers } from './handlers';
 export const states: Record<StateType, State> = {
   expectOperand: {
     tokenTypes: {
-      literal: { toState: 'expectBinOp' },
-      identifier: { toState: 'identifier' },
-      unaryOp: {},
+      literal: { toState: 'expectBinOp', handler: handlers.literal },
+      identifier: { toState: 'expectBinOp', handler: handlers.identifier },
+      unaryOp: { handler: handlers.unaryOp },
       openParen: { toState: 'subExpression' },
       openCurly: { toState: 'expectObjKey', handler: handlers.objStart },
       openBracket: { toState: 'arrayVal', handler: handlers.arrayStart },
@@ -44,7 +42,8 @@ export const states: Record<StateType, State> = {
   },
   expectBinOp: {
     tokenTypes: {
-      binaryOp: { toState: 'expectOperand' },
+      binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
+      openBracket: { toState: 'index' },
       pipe: { toState: 'expectTransform' },
       question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
     },
@@ -53,6 +52,7 @@ export const states: Record<StateType, State> = {
   expectObjKey: {
     tokenTypes: {
       identifier: { toState: 'expectKeyValSep', handler: handlers.objKey },
+      openBracket: { toState: 'objKey' },
       closeCurly: { toState: 'expectBinOp' },
     },
   },
@@ -60,15 +60,6 @@ export const states: Record<StateType, State> = {
     tokenTypes: {
       colon: { toState: 'objVal' },
     },
-  },
-  identifier: {
-    tokenTypes: {
-      binaryOp: { toState: 'expectOperand' },
-      openBracket: { toState: 'index' },
-      pipe: { toState: 'expectTransform' },
-      question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
-    },
-    completable: true,
   },
   expectTransform: {
     tokenTypes: {
@@ -79,9 +70,10 @@ export const states: Record<StateType, State> = {
   postTransform: {
     tokenTypes: {
       openParen: { toState: 'argVal' },
-      binaryOp: { toState: 'expectOperand' },
+      binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
       openBracket: { toState: 'index' },
       pipe: { toState: 'expectTransform' },
+      question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
     },
     completable: true,
   },
@@ -95,27 +87,25 @@ export const states: Record<StateType, State> = {
     subHandler: subHandlers.argVal,
     endStates: {
       comma: 'argVal',
-      closeParen: 'postTransformArgs',
+      closeParen: 'expectBinOp',
     },
-  },
-  postTransformArgs: {
-    tokenTypes: {
-      binaryOp: { toState: 'expectOperand' },
-      openBracket: { toState: 'index' },
-      pipe: { toState: 'expectTransform' },
-    },
-    completable: true,
   },
   index: {
     subHandler: subHandlers.index,
     endStates: {
-      closeBracket: 'identifier',
+      closeBracket: 'expectBinOp',
     },
   },
   subExpression: {
     subHandler: subHandlers.subExpression,
     endStates: {
       closeParen: 'expectBinOp',
+    },
+  },
+  objKey: {
+    subHandler: subHandlers.objKey,
+    endStates: {
+      closeBracket: 'expectKeyValSep',
     },
   },
   objVal: {

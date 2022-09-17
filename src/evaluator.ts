@@ -88,8 +88,8 @@ export function Evaluator(grammar: Grammar, context?: any) {
      */
     ObjectLiteral: (ast: ObjectLiteralNode) => {
       const result: any = {};
-      Object.keys(ast.value).forEach((key) => {
-        result[key] = evaluate(ast.value[key]);
+      ast.entries.forEach((entry) => {
+        result[evaluate(entry.key)] = evaluate(entry.value);
       });
       return result;
     },

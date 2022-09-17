@@ -38,7 +38,8 @@ export const getGrammar = (): Grammar => ({
   binaryOps: {
     '.': {
       priority: 100,
-      fn: (left, right) => left != null ? left[right] : undefined,
+      delay: true,
+      fn: (left, right) => left != null ? left[right()] : undefined,
     },
     '+': {
       priority: 50,
@@ -73,11 +74,11 @@ export const getGrammar = (): Grammar => ({
     },
     '==': {
       priority: 30,
-      fn: (left, right) => left == right,
+      fn: (left, right) => left === right,
     },
     '!=': {
       priority: 30,
-      fn: (left, right) => left != right,
+      fn: (left, right) => left !== right,
     },
     '>': {
       priority: 40,
@@ -112,7 +113,7 @@ export const getGrammar = (): Grammar => ({
           return right.indexOf(left) !== -1;
         }
         if (Array.isArray(right)) {
-          return right.some((i) => i == left);
+          return right.some((i) => i === left);
         }
         return false;
       },

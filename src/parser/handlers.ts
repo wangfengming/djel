@@ -18,6 +18,56 @@ import { INDEX_PRIORITY, PIPE_PRIORITY } from '../grammar';
 
 export const handlers = {
   /**
+   * Handles literal values, such as strings, booleans, and numerics, by adding
+   * them as a new node in the AST.
+   * @param token A token object
+   */
+  literal(this: Parser, token: Token) {
+    this._placeAtCursor({ type: 'Literal', value: (token as LiteralToken).value });
+  },
+  /**
+   * Handles identifier tokens by adding them as a new node in the AST.
+   * @param token A token object
+   */
+  identifier(this: Parser, token: Token) {
+    const identifier = (token as IdentifierToken).value;
+    let node: AstNode = { type: 'Identifier', value: identifier };
+    if (identifier.match(/@(\d?)/)) {
+      this._lambda = true;
+    } else if (this._cursor && this._cursor.type === 'BinaryExpression' && this._cursor.operator === '.') {
+      node = { type: 'Literal', value: identifier } as LiteralNode;
+    }
+    this._placeAtCursor(node);
+  },
+  /**
+   * Handles token of type 'unaryOp', indicating that the operation has only
+   * one input: a right side.
+   * @param token A token object
+   */
+  unaryOp(this: Parser, token: Token) {
+    this._placeAtCursor({
+      type: 'UnaryExpression',
+      operator: (token as UnaryOpToken).value,
+    } as UnaryExpressionNode);
+  },
+  /**
+   * Handles tokens of type 'binaryOp', indicating an operation that has two
+   * inputs: a left side and a right side.
+   * @param token A token object
+   */
+  binaryOp(this: Parser, token: Token) {
+    const priority = this._grammar.binaryOps[(token as BinaryOpToken).value].priority || 0;
+    const parent = this._priority(priority);
+    const node = {
+      type: 'BinaryExpression',
+      operator: token.value,
+      left: this._cursor,
+    } as BinaryExpressionNode;
+    this._setParent(this._cursor!, node);
+    this._cursor = parent;
+    this._placeAtCursor(node);
+  },
+  /**
    * Handles new array literals by adding them as a new node in the AST,
    * initialized with an empty array.
    */
@@ -29,14 +79,17 @@ export const handlers = {
    * initialized with an empty object.
    */
   objStart(this: Parser) {
-    this._placeAtCursor({ type: 'ObjectLiteral', value: {} });
+    this._placeAtCursor({ type: 'ObjectLiteral', entries: [] });
   },
   /**
    * Queues a new object literal key to be written once a value is collected.
    * @param token A token object
    */
   objKey(this: Parser, token: Token) {
-    this._curObjKey = (token as IdentifierToken).value;
+    this._curObjKey = {
+      type: 'Literal',
+      value: (token as IdentifierToken).value,
+    };
   },
   /**
    * Handles the start of a new ternary expression by encapsulating the entire
@@ -74,13 +127,19 @@ export const subHandlers = {
   arrayVal(this: Parser, ast?: AstNode) {
     if (ast) (this._cursor as ArrayLiteralNode).value.push(ast);
   },
+  objKey(this: Parser, ast: AstNode) {
+    this._curObjKey = ast;
+  },
   /**
    * Handles an object value by adding its AST to the queued key on the object
    * literal node currently at the cursor.
    * @param ast The subexpression tree
    */
   objVal(this: Parser, ast: AstNode) {
-    (this._cursor as ObjectLiteralNode).value[this._curObjKey!] = ast;
+    (this._cursor as ObjectLiteralNode).entries.push({
+      key: this._curObjKey!,
+      value: ast,
+    });
   },
   /**
    * Handles a completed consequent subexpression of a ternary operator.
@@ -131,60 +190,5 @@ export const subHandlers = {
       left: this._cursor!,
       right: ast,
     });
-  },
-};
-
-export type TokenHandlersKey = keyof typeof tokenHandlers;
-
-export const tokenHandlers = {
-  /**
-   * Handles literal values, such as strings, booleans, and numerics, by adding
-   * them as a new node in the AST.
-   * @param token A token object
-   */
-  literal(this: Parser, token: Token) {
-    this._placeAtCursor({ type: 'Literal', value: (token as LiteralToken).value });
-  },
-  /**
-   * Handles identifier tokens by adding them as a new node in the AST.
-   * @param token A token object
-   */
-  identifier(this: Parser, token: Token) {
-    const identifier = (token as IdentifierToken).value;
-    let node: AstNode = { type: 'Identifier', value: identifier };
-    if (identifier.match(/@(\d?)/)) {
-      this._lambda = true;
-    } else if (this._cursor && this._cursor.type === 'BinaryExpression' && this._cursor.operator === '.') {
-      node = { type: 'Literal', value: identifier } as LiteralNode;
-    }
-    this._placeAtCursor(node);
-  },
-  /**
-   * Handles token of type 'unaryOp', indicating that the operation has only
-   * one input: a right side.
-   * @param token A token object
-   */
-  unaryOp(this: Parser, token: Token) {
-    this._placeAtCursor({
-      type: 'UnaryExpression',
-      operator: (token as UnaryOpToken).value,
-    } as UnaryExpressionNode);
-  },
-  /**
-   * Handles tokens of type 'binaryOp', indicating an operation that has two
-   * inputs: a left side and a right side.
-   * @param token A token object
-   */
-  binaryOp(this: Parser, token: Token) {
-    const priority = this._grammar.binaryOps[(token as BinaryOpToken).value].priority || 0;
-    const parent = this._priority(priority);
-    const node = {
-      type: 'BinaryExpression',
-      operator: token.value,
-      left: this._cursor,
-    } as BinaryExpressionNode;
-    this._setParent(this._cursor!, node);
-    this._cursor = parent;
-    this._placeAtCursor(node);
   },
 };

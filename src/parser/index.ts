@@ -9,9 +9,7 @@ import type {
   StateType,
   Grammar,
 } from '../types';
-import type { TokenHandlersKey } from './handlers';
 import { states } from './states';
-import { tokenHandlers } from './handlers';
 
 /**
  * The Parser is a state machine that converts tokens into
@@ -30,7 +28,7 @@ export class Parser {
   _tree?: AstNode;
   _cursor?: AstNode;
   _subParser?: Parser;
-  _curObjKey?: string;
+  _curObjKey?: AstNode;
   _parentStop?: boolean;
   _lambda?: boolean;
 
@@ -83,8 +81,6 @@ export class Parser {
       const tokenType = state.tokenTypes[token.type]!;
       if (tokenType.handler) {
         tokenType.handler.call(this, token);
-      } else if (tokenHandlers[token.type as TokenHandlersKey]) {
-        tokenHandlers[token.type as TokenHandlersKey].call(this, token);
       }
       if (tokenType.toState) this._state = tokenType.toState;
     } else if (this._stopMap[token.type]) {
