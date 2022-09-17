@@ -1,4 +1,4 @@
-# Djel
+# Djel (djexl-js)
 
 Dynamic javascript Expression Language: Powerful context-based expression parser and evaluator.
 
@@ -7,7 +7,7 @@ Dynamic javascript Expression Language: Powerful context-based expression parser
 ## Quick start
 
 ```javascript
-const Djel = require('./lib').default;
+const Djel = require('djexl-js').default;
 const djel = Djel();
 
 // add Transform
