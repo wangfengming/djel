@@ -72,13 +72,13 @@ console.log(res); // Output: true
 For Node.js or Web projects, type this in your project folder:
 
 ```bash
-yarn add djel
+yarn add djexl-js
 ```
 
 Access `Djel` the same way, backend or front:
 
 ```javascript
-import Djel from 'djel';
+import Djel from 'djexl-js';
 ```
 
 ## All the details

@@ -1,5 +1,5 @@
 {
-  "name": "djel",
+  "name": "djexl-js",
   "version": "1.0.0",
   "description": "Dynamic javascript Expression Language: Powerful context-based expression parser and evaluator.",
   "main": "lib/index.js",
