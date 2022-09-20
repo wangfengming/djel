@@ -16,12 +16,14 @@ export interface SymbolGrammar {
 
 export interface BinaryOpGrammar {
   priority: number;
+  rtl?: boolean;
   delay?: false;
   fn: (left: any, right: any) => any;
 }
 
 export interface DelayBinaryOpGrammar {
   priority: number;
+  rtl?: boolean;
   delay: true;
   fn: (left: any, right: () => any) => any;
 }

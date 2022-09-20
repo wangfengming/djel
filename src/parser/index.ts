@@ -79,9 +79,7 @@ export class Parser {
       }
     } else if (state.tokenTypes && state.tokenTypes[token.type]) {
       const tokenType = state.tokenTypes[token.type]!;
-      if (tokenType.handler) {
-        tokenType.handler.call(this, token);
-      }
+      if (tokenType.handler) tokenType.handler.call(this, token);
       if (tokenType.toState) this._state = tokenType.toState;
     } else if (this._stopMap[token.type]) {
       return this._stopMap[token.type];
@@ -187,28 +185,31 @@ export class Parser {
   /**
    * Rotate the tree to the correct priority
    * @param {number} priority target priority
+   * @param {string} operator the new operator
    */
-  _priority(priority: number) {
+  _priority(priority: number, operator: string) {
     let parent = this._cursor && this._cursor._parent;
-    while (parent && this._getPriority(parent) >= priority) {
+    while (parent && this._getPriority(parent, operator) >= priority) {
       this._cursor = parent;
       parent = parent._parent;
     }
-    return parent;
   }
 
   /**
    * Get the priority of a BinaryExpression or UnaryExpression
-   * @param ast
    */
-  _getPriority(ast: AstNode) {
+  _getPriority(ast: AstNode, operator: string) {
     if (ast.type === 'BinaryExpression') {
-      return this._grammar.binaryOps[ast.operator].priority || -1;
+      const binaryOp = this._grammar.binaryOps[ast.operator];
+      return ast.operator === operator && binaryOp.rtl
+        ? binaryOp.priority - 1
+        : binaryOp.priority;
     }
     if (ast.type === 'UnaryExpression') {
-      return this._grammar.unaryOps[ast.operator].priority || -1;
+      const unaryOp = this._grammar.unaryOps[ast.operator];
+      return unaryOp.priority;
     }
-    return -1;
+    return 0;
   }
 
   /**
@@ -218,8 +219,6 @@ export class Parser {
    * otherwise return the original node.
    */
   _maybeLambda(ast: AstNode) {
-    const result = ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
-    this._lambda = false;
-    return result;
+    return ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
   }
 }

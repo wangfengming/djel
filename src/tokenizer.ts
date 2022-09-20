@@ -201,7 +201,7 @@ function createRegexp(tokenNames: string[]) {
   ];
   const postOpRegexElems = [
     // Identifiers
-    /\b[a-zA-Z_$][a-zA-Z\d_$]*|@\d?\b/.source,
+    /[a-zA-Z_$][a-zA-Z\d_$]*|@\d?/.source,
     // Numerics (without negative symbol)
     /\d*\.\d+|\d+/.source,
   ];

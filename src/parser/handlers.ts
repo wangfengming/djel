@@ -56,16 +56,14 @@ export const handlers = {
    * @param token A token object
    */
   binaryOp(this: Parser, token: Token) {
-    const priority = this._grammar.binaryOps[(token as BinaryOpToken).value].priority || 0;
-    const parent = this._priority(priority);
-    const node = {
+    const operator = (token as BinaryOpToken).value;
+    const priority = this._grammar.binaryOps[operator].priority || 0;
+    this._priority(priority, operator);
+    this._placeBeforeCursor({
       type: 'BinaryExpression',
       operator: token.value,
       left: this._cursor,
-    } as BinaryExpressionNode;
-    this._setParent(this._cursor!, node);
-    this._cursor = parent;
-    this._placeAtCursor(node);
+    } as BinaryExpressionNode);
   },
   /**
    * Handles new array literals by adding them as a new node in the AST,
@@ -109,7 +107,7 @@ export const handlers = {
    * @param token A token object
    */
   transform(this: Parser, token: Token) {
-    this._priority(PIPE_PRIORITY);
+    this._priority(PIPE_PRIORITY, '|');
     const name = (token as IdentifierToken).value;
     this._placeBeforeCursor({
       type: 'FunctionCall',
@@ -161,6 +159,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   exprTransform(this: Parser, ast: AstNode) {
+    this._lambda = false;
     (this._cursor as FunctionCallNode).expr = this._maybeLambda(ast);
   },
   /**
@@ -168,6 +167,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   argVal(this: Parser, ast: AstNode) {
+    this._lambda = false;
     (this._cursor as FunctionCallNode).args.push(this._maybeLambda(ast));
   },
   /**
@@ -184,7 +184,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   index(this: Parser, ast: AstNode) {
-    this._priority(INDEX_PRIORITY);
+    this._priority(INDEX_PRIORITY, '[]');
     this._placeBeforeCursor({
       type: 'IndexExpression',
       left: this._cursor!,

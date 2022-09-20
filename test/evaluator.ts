@@ -22,6 +22,12 @@ describe('Evaluator', () => {
     const e = Evaluator(grammar);
     expect(e.evaluate(toTree('(2 + 3) * 4'))).to.equal(20);
   });
+  it('should evaluate right-to-left for ^', () => {
+    const e = Evaluator(grammar);
+    expect(e.evaluate(toTree('2 ^ 3 ^ 2'))).to.equal(2 ** 3 ** 2);
+    expect(e.evaluate(toTree('2 ^ 3 ^ 2'))).to.equal(2 ** (3 ** 2));
+    expect(e.evaluate(toTree('(2 ^ 3) ^ 2'))).to.equal((2 ** 3) ** 2);
+  });
   it('should evaluate a string concat', () => {
     const e = Evaluator(grammar);
     expect(e.evaluate(toTree('"Hello" + (4+4) + "Wo\\"rld"')))

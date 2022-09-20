@@ -70,6 +70,7 @@ export const getGrammar = (): Grammar => ({
     },
     '^': {
       priority: 70,
+      rtl: true,
       fn: (left, right) => Math.pow(left, right),
     },
     '==': {
