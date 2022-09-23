@@ -185,11 +185,13 @@ export class Parser {
   /**
    * Rotate the tree to the correct priority
    * @param {number} priority target priority
-   * @param {string} operator the new operator
+   * @param {boolean} [rtl] the new operator associativity
    */
-  _priority(priority: number, operator: string) {
+  _priority(priority: number, rtl?: boolean) {
     let parent = this._cursor && this._cursor._parent;
-    while (parent && this._getPriority(parent, operator) >= priority) {
+    while (parent) {
+      const parentPriority = this._getPriority(parent);
+      if (rtl ? (parentPriority <= priority) : (parentPriority < priority)) break;
       this._cursor = parent;
       parent = parent._parent;
     }
@@ -198,16 +200,12 @@ export class Parser {
   /**
    * Get the priority of a BinaryExpression or UnaryExpression
    */
-  _getPriority(ast: AstNode, operator: string) {
+  _getPriority(ast: AstNode) {
     if (ast.type === 'BinaryExpression') {
-      const binaryOp = this._grammar.binaryOps[ast.operator];
-      return ast.operator === operator && binaryOp.rtl
-        ? binaryOp.priority - 1
-        : binaryOp.priority;
+      return this._grammar.binaryOps[ast.operator].priority;
     }
     if (ast.type === 'UnaryExpression') {
-      const unaryOp = this._grammar.unaryOps[ast.operator];
-      return unaryOp.priority;
+      return this._grammar.unaryOps[ast.operator].priority;
     }
     return 0;
   }

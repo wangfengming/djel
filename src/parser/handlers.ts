@@ -56,9 +56,8 @@ export const handlers = {
    * @param token A token object
    */
   binaryOp(this: Parser, token: Token) {
-    const operator = (token as BinaryOpToken).value;
-    const priority = this._grammar.binaryOps[operator].priority || 0;
-    this._priority(priority, operator);
+    const binaryOp = this._grammar.binaryOps[(token as BinaryOpToken).value];
+    this._priority(binaryOp.priority, binaryOp.rtl);
     this._placeBeforeCursor({
       type: 'BinaryExpression',
       operator: token.value,
@@ -107,7 +106,7 @@ export const handlers = {
    * @param token A token object
    */
   transform(this: Parser, token: Token) {
-    this._priority(PIPE_PRIORITY, '|');
+    this._priority(PIPE_PRIORITY);
     const name = (token as IdentifierToken).value;
     this._placeBeforeCursor({
       type: 'FunctionCall',
@@ -184,7 +183,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   index(this: Parser, ast: AstNode) {
-    this._priority(INDEX_PRIORITY, '[]');
+    this._priority(INDEX_PRIORITY);
     this._placeBeforeCursor({
       type: 'IndexExpression',
       left: this._cursor!,
