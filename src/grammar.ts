@@ -13,11 +13,12 @@ import type { Grammar } from './types';
  * 70 ^ (pow)
  * 80 | (pipe)
  * 90 ! + - (unary)
- * 100 [] . (member access)
+ * 100 [] . () (member access/function call)
  */
 
 export const PIPE_PRIORITY = 80;
 export const INDEX_PRIORITY = 100;
+export const FUNCTION_CALL_PRIORITY = 100;
 
 /**
  * A map of all expression elements to their properties.

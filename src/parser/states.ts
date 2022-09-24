@@ -46,6 +46,7 @@ export const states: Record<StateType, State> = {
       openBracket: { toState: 'index' },
       pipe: { toState: 'expectTransform' },
       question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
+      openParen: { toState: 'argVal', handler: handlers.functionCall },
     },
     completable: true,
   },

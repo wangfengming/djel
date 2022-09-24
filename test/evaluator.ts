@@ -79,10 +79,24 @@ describe('Evaluator', () => {
     expect(() => e.evaluate(tree)).to.throw();
   });
   it('should apply data function transforms', () => {
-    const context = { foo: 10, half: (v: number) => v / 2 };
+    const context = { foo: 10, fns: { half: (v: number) => v / 2 } };
     const e = Evaluator(grammar, context);
-    const tree = toTree('foo|(half) + 3');
-    expect(e.evaluate(tree)).to.equal(8);
+    const tree1 = toTree('foo|(fns.half) + 3');
+    expect(e.evaluate(tree1)).to.equal(8);
+    const tree2 = toTree('foo|(fns["half"]) + 3');
+    expect(e.evaluate(tree2)).to.equal(8);
+    const tree3 = toTree('foo|(fns["ha" + "lf"]) + 3');
+    expect(e.evaluate(tree3)).to.equal(8);
+  });
+  it('should call function', () => {
+    const context = { foo: 10, fns: { half: (v: number) => v / 2 } };
+    const e = Evaluator(grammar, context);
+    const tree1 = toTree('fns.half(foo) + 3');
+    expect(e.evaluate(tree1)).to.equal(8);
+    const tree2 = toTree('fns["half"](foo) + 3');
+    expect(e.evaluate(tree2)).to.equal(8);
+    const tree3 = toTree('fns["ha" + "lf"](foo) + 3');
+    expect(e.evaluate(tree3)).to.equal(8);
   });
   it('should filter arrays', () => {
     const context = {

@@ -14,7 +14,7 @@ import type {
   UnaryOpToken,
   BinaryOpToken,
 } from '../types';
-import { INDEX_PRIORITY, PIPE_PRIORITY } from '../grammar';
+import { FUNCTION_CALL_PRIORITY, INDEX_PRIORITY, PIPE_PRIORITY } from '../grammar';
 
 export const handlers = {
   /**
@@ -102,7 +102,8 @@ export const handlers = {
   },
   /**
    * Handles identifier tokens when used to indicate the name of a transform to
-   * be applied.
+   * be applied, or handles open paren tokens when used to indicate the expression
+   * of a function in parens to be called.
    * @param token A token object
    */
   transform(this: Parser, token: Token) {
@@ -112,6 +113,18 @@ export const handlers = {
       type: 'FunctionCall',
       name: name === '(' ? undefined : name,
       args: [this._cursor!],
+    });
+  },
+  /**
+   * handles open paren tokens when used to indicate the expression
+   * of a function left on paren to be called.
+   */
+  functionCall(this: Parser) {
+    this._priority(FUNCTION_CALL_PRIORITY);
+    this._placeBeforeCursor({
+      type: 'FunctionCall',
+      expr: this._cursor,
+      args: [],
     });
   },
 };

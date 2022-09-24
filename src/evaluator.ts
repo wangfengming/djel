@@ -115,8 +115,8 @@ export function Evaluator(grammar: Grammar, context?: any) {
       const fn = ast.expr
         ? evaluate(ast.expr)
         : grammar.transforms[ast.name!];
-      if (!fn) {
-        throw new Error(`Cannot find transform ${ast.name}`);
+      if (typeof fn !== 'function') {
+        throw new Error(`${fn} is not a function`);
       }
       const args = ast.args.map((item) => evaluate(item));
       return fn(...args);
