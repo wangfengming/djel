@@ -4,14 +4,14 @@ export interface SymbolGrammar {
   type:
     | 'openBracket'
     | 'closeBracket'
-    | 'pipe'
     | 'openCurly'
     | 'closeCurly'
-    | 'colon'
-    | 'comma'
     | 'openParen'
     | 'closeParen'
-    | 'question';
+    | 'colon'
+    | 'comma'
+    | 'question'
+    | 'pipe';
 }
 
 export interface BinaryOpGrammar {
@@ -43,65 +43,36 @@ export interface Grammar {
 export type TokenType =
   | 'openBracket'
   | 'closeBracket'
-  | 'pipe'
   | 'openCurly'
   | 'closeCurly'
-  | 'colon'
-  | 'comma'
   | 'openParen'
   | 'closeParen'
+  | 'colon'
+  | 'comma'
   | 'question'
+  | 'pipe'
   | 'binaryOp'
   | 'unaryOp'
   | 'identifier'
   | 'literal';
 
-export interface LiteralToken {
-  type: 'literal';
-  value: string | boolean | number;
-  raw: string;
-}
-
-export interface IdentifierToken {
-  type: 'identifier';
-  value: string;
-  raw: string;
-}
-
-export interface BinaryOpToken {
-  type: 'binaryOp';
-  value: string;
-  raw: string;
-}
-
-export interface UnaryOpToken {
-  type: 'unaryOp';
-  value: string;
-  raw: string;
-}
-
-export interface SymbolToken {
+export interface Token {
   type: TokenType;
   value: string;
   raw: string;
+  // for literal token.
+  literal?: string | number | boolean;
 }
-
-export type Token =
-  | LiteralToken
-  | IdentifierToken
-  | BinaryOpToken
-  | UnaryOpToken
-  | SymbolToken;
 
 export type AstNode =
   | LiteralNode
   | IdentifierNode
-  | UnaryExpressionNode
-  | BinaryExpressionNode
-  | IndexExpressionNode
-  | ArrayLiteralNode
-  | ObjectLiteralNode
-  | ConditionalExpressionNode
+  | UnaryNode
+  | BinaryNode
+  | MemberNode
+  | ArrayNode
+  | ObjectNode
+  | ConditionalNode
   | FunctionCallNode
   | LambdaNode;
 
@@ -114,12 +85,12 @@ interface AstNodeBase {
 export type AstNodeType =
   | 'Literal'
   | 'Identifier'
-  | 'BinaryExpression'
-  | 'UnaryExpression'
-  | 'IndexExpression'
-  | 'ObjectLiteral'
-  | 'ArrayLiteral'
-  | 'ConditionalExpression'
+  | 'Binary'
+  | 'Unary'
+  | 'Member'
+  | 'Object'
+  | 'Array'
+  | 'Conditional'
   | 'FunctionCall'
   | 'Lambda'
 
@@ -133,39 +104,39 @@ export interface IdentifierNode extends AstNodeBase {
   value: string;
 }
 
-export interface BinaryExpressionNode extends AstNodeBase {
-  type: 'BinaryExpression';
+export interface BinaryNode extends AstNodeBase {
+  type: 'Binary';
   operator: string;
   left: AstNode;
   right: AstNode;
 }
 
-export interface UnaryExpressionNode extends AstNodeBase {
-  type: 'UnaryExpression';
+export interface UnaryNode extends AstNodeBase {
+  type: 'Unary';
   operator: string;
   right: AstNode;
 }
 
-export interface IndexExpressionNode extends AstNodeBase {
-  type: 'IndexExpression';
+export interface MemberNode extends AstNodeBase {
+  type: 'Member';
   left: AstNode;
   right: AstNode;
 }
 
-export interface ObjectLiteralNode extends AstNodeBase {
-  type: 'ObjectLiteral';
+export interface ObjectNode extends AstNodeBase {
+  type: 'Object';
   entries: { key: AstNode; value: AstNode }[];
 }
 
-export interface ArrayLiteralNode extends AstNodeBase {
-  type: 'ArrayLiteral';
+export interface ArrayNode extends AstNodeBase {
+  type: 'Array';
   value: AstNode[];
 }
 
-export interface ConditionalExpressionNode extends AstNodeBase {
-  type: 'ConditionalExpression';
+export interface ConditionalNode extends AstNodeBase {
+  type: 'Conditional';
   test: AstNode;
-  consequent: AstNode;
+  consequent?: AstNode;
   alternate: AstNode;
 }
 
@@ -186,11 +157,11 @@ export type StateType =
   | 'expectBinOp'
   | 'expectObjKey'
   | 'expectKeyValSep'
-  | 'index'
+  | 'member'
   | 'expectTransform'
   | 'postTransform'
   | 'exprTransform'
-  | 'subExpression'
+  | 'subExp'
   | 'argVal'
   | 'objKey'
   | 'objVal'

@@ -1,5 +1,7 @@
 import type { Grammar, Token } from './types';
 
+const ID_REGEX = /^[a-zA-Z_$][a-zA-Z\d_$]*$|^@\d?$/;
+
 /**
  * Tokenizer is a collection of stateless, statically-accessed functions for the
  * lexical parsing of a string. Its responsibility is to identify the
@@ -14,49 +16,6 @@ import type { Grammar, Token } from './types';
 export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
   let _grammar = grammar;
   let _regexp: RegExp | undefined;
-
-  /**
-   * Splits an expression string into an array of expression elements.
-   * @param {string} str A expression string
-   * @returns {string[]} An array of substrings defining the functional
-   *      elements of the expression.
-   */
-  function getElements(str: string) {
-    if (!_regexp) {
-      const tokenNames = Object.keys(_grammar.symbols)
-        .concat(Object.keys(_grammar.binaryOps))
-        .concat(Object.keys(_grammar.unaryOps));
-      _regexp = createRegexp(tokenNames);
-    }
-    const elements = str.split(_regexp).filter((i) => i);
-    return elements;
-  }
-
-  /**
-   * Converts an array of expression elements into an array of tokens.
-   * The resulting array may not equal the element array in length, as any
-   * elements that consist only of whitespace get appended to the previous
-   * token's "raw" property.
-   * @param {string[]} elements An array of expression elements to be
-   *      converted to tokens
-   * @returns an array of token objects.
-   */
-  function getTokens(elements: string[]) {
-    const tokens: Token[] = [];
-
-    elements.forEach((element) => {
-      if (/^\s*$/.test(element)) { // is whitespace
-        if (tokens.length) tokens[tokens.length - 1].raw += element;
-      } else if (element.startsWith('#')) { // is comment
-        return;
-      } else {
-        const token = createToken(element, _grammar, isPreferUnaryOp(tokens));
-        tokens.push(token);
-      }
-    });
-
-    return tokens;
-  }
 
   /**
    * Converts a string into an array of tokens. Each token is an object
@@ -83,8 +42,14 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
    * @throws {Error} if the provided string contains an invalid token.
    */
   const tokenize = (str: string) => {
-    const elements = getElements(str);
-    const tokens = getTokens(elements);
+    if (!_regexp) {
+      const tokenNames = Object.keys(_grammar.symbols)
+        .concat(Object.keys(_grammar.binaryOps))
+        .concat(Object.keys(_grammar.unaryOps));
+      _regexp = createRegexp(tokenNames);
+    }
+    const elements = str.split(_regexp).filter((i) => i);
+    const tokens = getTokens(elements, _grammar);
     return tokens;
   };
 
@@ -100,12 +65,35 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
   return {
     tokenize,
     updateGrammar,
-    getElements,
-    getTokens,
   };
 }
 
-const ID_REGEX = /^[a-zA-Z_$][a-zA-Z\d_$]*$|^@\d?$/;
+/**
+ * Converts an array of expression elements into an array of tokens.
+ * The resulting array may not equal the element array in length, as any
+ * elements that consist only of whitespace get appended to the previous
+ * token's "raw" property.
+ * @param {string[]} elements An array of expression elements to be
+ *      converted to tokens
+ * @param grammar grammar map object of symbols, unary operators and binary operators
+ * @returns an array of token objects.
+ */
+function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
+  const tokens: Token[] = [];
+
+  elements.forEach((element) => {
+    if (/^\s*$/.test(element)) { // is whitespace
+      if (tokens.length) tokens[tokens.length - 1].raw += element;
+    } else if (element.startsWith('#')) { // is comment
+      return;
+    } else {
+      const token = createToken(element, grammar, isPreferUnaryOp(tokens));
+      tokens.push(token);
+    }
+  });
+
+  return tokens;
+}
 
 /**
  * Creates a new token object from an element of a string.
@@ -124,11 +112,11 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
   };
 
   if (element[0] == '"' || element[0] == '\'') {
-    token.value = unquote(element);
+    token.literal = unquote(element);
   } else if (element.match(/^-?(?:(\d*\.\d+)|\d+)$/)) {
-    token.value = parseFloat(element);
+    token.literal = parseFloat(element);
   } else if (element === 'true' || element === 'false') {
-    token.value = element === 'true';
+    token.literal = element === 'true';
   } else if (grammar.symbols[element]) {
     token.type = grammar.symbols[element].type;
   } else if (grammar.binaryOps[element] || grammar.unaryOps[element]) {
@@ -152,10 +140,10 @@ function isPreferUnaryOp(tokens: Token[]) {
   if (!tokens.length) return true;
   const lastTokenType = tokens[tokens.length - 1].type;
   return [
+    'openBracket',
+    'openParen',
     'binaryOp',
     'unaryOp',
-    'openParen',
-    'openBracket',
     'question',
     'colon',
     'comma',

@@ -2,12 +2,12 @@ import type {
   AstNode,
   LiteralNode,
   IdentifierNode,
-  UnaryExpressionNode,
-  BinaryExpressionNode,
-  IndexExpressionNode,
-  ArrayLiteralNode,
-  ObjectLiteralNode,
-  ConditionalExpressionNode,
+  UnaryNode,
+  BinaryNode,
+  MemberNode,
+  ArrayNode,
+  ObjectNode,
+  ConditionalNode,
   FunctionCallNode,
   LambdaNode,
   Grammar,
@@ -44,28 +44,28 @@ export function Evaluator(grammar: Grammar, context?: any) {
     /**
      * Evaluates a Unary expression by passing the right side through the
      * operator's eval function.
-     * @param ast An expression tree with a UnaryExpression as the top node
+     * @param ast An expression tree with a Unary as the top node
      */
-    UnaryExpression: (ast: UnaryExpressionNode) => {
+    Unary: (ast: UnaryNode) => {
       return grammar.unaryOps[ast.operator].fn(evaluate(ast.right));
     },
     /**
-     * Evaluates a BinaryExpression node by running the Grammar's evaluator for
+     * Evaluates a Binary node by running the Grammar's evaluator for
      * the given operator.
-     * @param ast An expression tree with a BinaryExpression as the top
+     * @param ast An expression tree with a Binary as the top
      *      node
      */
-    BinaryExpression: (ast: BinaryExpressionNode) => {
+    Binary: (ast: BinaryNode) => {
       const binaryOp = grammar.binaryOps[ast.operator];
       return binaryOp.delay
         ? binaryOp.fn(evaluate(ast.left), () => evaluate(ast.right))
         : binaryOp.fn(evaluate(ast.left), evaluate(ast.right));
     },
     /**
-     * Evaluates a IndexExpression by applying it to the subject value.
-     * @param ast An expression tree with a IndexExpression as the top node
+     * Evaluates a Member by applying it to the subject value.
+     * @param ast An expression tree with a Member as the top node
      */
-    IndexExpression: (ast: IndexExpressionNode) => {
+    Member: (ast: MemberNode) => {
       const left = evaluate(ast.left);
       if (left == null) return undefined;
       const key = evaluate(ast.right);
@@ -75,18 +75,18 @@ export function Evaluator(grammar: Grammar, context?: any) {
       return left[key];
     },
     /**
-     * Evaluates an ArrayLiteral by returning its value, with each element
+     * Evaluates an Array by returning its value, with each element
      * independently run through the evaluator.
      * @param ast An expression tree with an
-     *      ObjectLiteral as the top node
+     *      Object as the top node
      */
-    ArrayLiteral: (ast: ArrayLiteralNode) => ast.value.map((item) => evaluate(item)),
+    Array: (ast: ArrayNode) => ast.value.map((item) => evaluate(item)),
     /**
-     * Evaluates an ObjectLiteral by returning its value, with each key
+     * Evaluates an Object by returning its value, with each key
      * independently run through the evaluator.
-     * @param ast An expression tree with an ObjectLiteral as the top node
+     * @param ast An expression tree with an Object as the top node
      */
-    ObjectLiteral: (ast: ObjectLiteralNode) => {
+    Object: (ast: ObjectNode) => {
       const result: any = {};
       ast.entries.forEach((entry) => {
         result[evaluate(entry.key)] = evaluate(entry.value);
@@ -94,14 +94,14 @@ export function Evaluator(grammar: Grammar, context?: any) {
       return result;
     },
     /**
-     * Evaluates a ConditionalExpression node by first evaluating its test branch,
+     * Evaluates a Conditional node by first evaluating its test branch,
      * and resolving with the consequent branch if the test is truthy, or the
      * alternate branch if it is not. If there is no consequent branch, the test
      * result will be used instead.
-     * @param ast An expression tree with a ConditionalExpression as
+     * @param ast An expression tree with a Conditional as
      *      the top node
      */
-    ConditionalExpression: (ast: ConditionalExpressionNode) => {
+    Conditional: (ast: ConditionalNode) => {
       const test = evaluate(ast.test);
       return test
         ? (ast.consequent ? evaluate(ast.consequent) : test)

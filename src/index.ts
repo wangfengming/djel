@@ -62,7 +62,7 @@ export default function Djel() {
    * new operator.
    */
   const addBinaryOps = (binaryOps: Record<string, BinaryOpGrammar | DelayBinaryOpGrammar>) => {
-    grammar = { ...grammar, binaryOps: { ...grammar.binaryOps, ...binaryOps } };
+    grammar.binaryOps = { ...grammar.binaryOps, ...binaryOps };
     tokenizer.updateGrammar(grammar);
   };
 
@@ -71,7 +71,7 @@ export default function Djel() {
    * on the left side of the value on which it will operate.
    */
   const addUnaryOps = (unaryOps: Record<string, UnaryOpGrammar>) => {
-    grammar = { ...grammar, unaryOps: { ...grammar.unaryOps, ...unaryOps } };
+    grammar.unaryOps = { ...grammar.unaryOps, ...unaryOps };
     tokenizer.updateGrammar(grammar);
   };
 
@@ -79,10 +79,7 @@ export default function Djel() {
    * Adds or replaces transform functions in this Djel instance.
    */
   const addTransforms = (transforms: Record<string, Function>) => {
-    grammar = {
-      ...grammar,
-      transforms: { ...grammar.transforms, ...transforms },
-    };
+    grammar.transforms = { ...grammar.transforms, ...transforms };
   };
 
   /**
@@ -91,11 +88,6 @@ export default function Djel() {
    */
   const removeOp = (operator: string) => {
     if (grammar.binaryOps[operator] || grammar.unaryOps[operator]) {
-      grammar = {
-        ...grammar,
-        unaryOps: { ...grammar.unaryOps },
-        binaryOps: { ...grammar.binaryOps },
-      };
       delete grammar.unaryOps[operator];
       delete grammar.binaryOps[operator];
       tokenizer.updateGrammar(grammar);
@@ -107,13 +99,7 @@ export default function Djel() {
    * @param {string} transformName The transform to be removed
    */
   const removeTransform = (transformName: string) => {
-    if (grammar.transforms[transformName]) {
-      grammar = {
-        ...grammar,
-        transforms: { ...grammar.transforms },
-      };
-      delete grammar.transforms[transformName];
-    }
+    delete grammar.transforms[transformName];
   };
 
   return {

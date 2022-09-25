@@ -2,19 +2,15 @@ import type { Parser } from './index';
 import type {
   AstNode,
   LiteralNode,
-  UnaryExpressionNode,
-  BinaryExpressionNode,
-  ArrayLiteralNode,
-  ObjectLiteralNode,
-  ConditionalExpressionNode,
+  UnaryNode,
+  BinaryNode,
+  ArrayNode,
+  ObjectNode,
+  ConditionalNode,
   FunctionCallNode,
   Token,
-  LiteralToken,
-  IdentifierToken,
-  UnaryOpToken,
-  BinaryOpToken,
 } from '../types';
-import { FUNCTION_CALL_PRIORITY, INDEX_PRIORITY, PIPE_PRIORITY } from '../grammar';
+import { FUNCTION_CALL_PRIORITY, MEMBER_PRIORITY, PIPE_PRIORITY } from '../grammar';
 
 export const handlers = {
   /**
@@ -23,18 +19,18 @@ export const handlers = {
    * @param token A token object
    */
   literal(this: Parser, token: Token) {
-    this._placeAtCursor({ type: 'Literal', value: (token as LiteralToken).value });
+    this._placeAtCursor({ type: 'Literal', value: token.literal! });
   },
   /**
    * Handles identifier tokens by adding them as a new node in the AST.
    * @param token A token object
    */
   identifier(this: Parser, token: Token) {
-    const identifier = (token as IdentifierToken).value;
+    const identifier = token.value;
     let node: AstNode = { type: 'Identifier', value: identifier };
     if (identifier.match(/@(\d?)/)) {
       this._lambda = true;
-    } else if (this._cursor && this._cursor.type === 'BinaryExpression' && this._cursor.operator === '.') {
+    } else if (this._cursor && this._cursor.type === 'Binary' && this._cursor.operator === '.') {
       node = { type: 'Literal', value: identifier } as LiteralNode;
     }
     this._placeAtCursor(node);
@@ -46,9 +42,9 @@ export const handlers = {
    */
   unaryOp(this: Parser, token: Token) {
     this._placeAtCursor({
-      type: 'UnaryExpression',
-      operator: (token as UnaryOpToken).value,
-    } as UnaryExpressionNode);
+      type: 'Unary',
+      operator: token.value,
+    } as UnaryNode);
   },
   /**
    * Handles tokens of type 'binaryOp', indicating an operation that has two
@@ -56,27 +52,27 @@ export const handlers = {
    * @param token A token object
    */
   binaryOp(this: Parser, token: Token) {
-    const binaryOp = this._grammar.binaryOps[(token as BinaryOpToken).value];
+    const binaryOp = this._grammar.binaryOps[token.value];
     this._priority(binaryOp.priority, binaryOp.rtl);
     this._placeBeforeCursor({
-      type: 'BinaryExpression',
+      type: 'Binary',
       operator: token.value,
       left: this._cursor,
-    } as BinaryExpressionNode);
+    } as BinaryNode);
   },
   /**
    * Handles new array literals by adding them as a new node in the AST,
    * initialized with an empty array.
    */
   arrayStart(this: Parser) {
-    this._placeAtCursor({ type: 'ArrayLiteral', value: [] });
+    this._placeAtCursor({ type: 'Array', value: [] });
   },
   /**
    * Handles new object literals by adding them as a new node in the AST,
    * initialized with an empty object.
    */
   objStart(this: Parser) {
-    this._placeAtCursor({ type: 'ObjectLiteral', entries: [] });
+    this._placeAtCursor({ type: 'Object', entries: [] });
   },
   /**
    * Queues a new object literal key to be written once a value is collected.
@@ -85,19 +81,19 @@ export const handlers = {
   objKey(this: Parser, token: Token) {
     this._curObjKey = {
       type: 'Literal',
-      value: (token as IdentifierToken).value,
+      value: token.value,
     };
   },
   /**
    * Handles the start of a new ternary expression by encapsulating the entire
-   * AST in a ConditionalExpression node, and using the existing tree as the
+   * AST in a Conditional node, and using the existing tree as the
    * test element.
    */
   ternaryStart(this: Parser) {
     this._tree = {
-      type: 'ConditionalExpression',
+      type: 'Conditional',
       test: this._tree!,
-    } as ConditionalExpressionNode;
+    } as ConditionalNode;
     this._cursor = this._tree;
   },
   /**
@@ -108,7 +104,7 @@ export const handlers = {
    */
   transform(this: Parser, token: Token) {
     this._priority(PIPE_PRIORITY);
-    const name = (token as IdentifierToken).value;
+    const name = token.value;
     this._placeBeforeCursor({
       type: 'FunctionCall',
       name: name === '(' ? undefined : name,
@@ -135,7 +131,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   arrayVal(this: Parser, ast?: AstNode) {
-    if (ast) (this._cursor as ArrayLiteralNode).value.push(ast);
+    if (ast) (this._cursor as ArrayNode).value.push(ast);
   },
   objKey(this: Parser, ast: AstNode) {
     this._curObjKey = ast;
@@ -146,7 +142,7 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   objVal(this: Parser, ast: AstNode) {
-    (this._cursor as ObjectLiteralNode).entries.push({
+    (this._cursor as ObjectNode).entries.push({
       key: this._curObjKey!,
       value: ast,
     });
@@ -156,14 +152,14 @@ export const subHandlers = {
    * @param ast The subexpression tree
    */
   ternaryMid(this: Parser, ast: AstNode) {
-    (this._cursor as ConditionalExpressionNode).consequent = ast;
+    (this._cursor as ConditionalNode).consequent = ast;
   },
   /**
    * Handles a completed alternate subexpression of a ternary operator.
    * @param ast The subexpression tree
    */
   ternaryEnd(this: Parser, ast: AstNode) {
-    (this._cursor as ConditionalExpressionNode).alternate = ast;
+    (this._cursor as ConditionalNode).alternate = ast;
   },
   /**
    * Handles a completed subexpression of a transform to be called.
@@ -178,27 +174,26 @@ export const subHandlers = {
    * Handles a subexpression that's used to define a transform argument's value.
    * @param ast The subexpression tree
    */
-  argVal(this: Parser, ast: AstNode) {
+  argVal(this: Parser, ast?: AstNode) {
     this._lambda = false;
-    (this._cursor as FunctionCallNode).args.push(this._maybeLambda(ast));
+    if (ast) (this._cursor as FunctionCallNode).args.push(this._maybeLambda(ast));
   },
   /**
    * Handles traditional subexpressions, delineated with the groupStart and
    * groupEnd elements.
    * @param ast The subexpression tree
    */
-  subExpression(this: Parser, ast: AstNode) {
+  subExp(this: Parser, ast: AstNode) {
     this._placeAtCursor(ast);
   },
   /**
-   * Handles a subexpression used for index an array returned by an
-   * identifier chain.
+   * Handles a subexpression used for member access an object.
    * @param ast The subexpression tree
    */
-  index(this: Parser, ast: AstNode) {
-    this._priority(INDEX_PRIORITY);
+  member(this: Parser, ast: AstNode) {
+    this._priority(MEMBER_PRIORITY);
     this._placeBeforeCursor({
-      type: 'IndexExpression',
+      type: 'Member',
       left: this._cursor!,
       right: ast,
     });

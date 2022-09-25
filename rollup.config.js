@@ -1,6 +1,6 @@
-import { terser } from 'rollup-plugin-terser'
+import { terser } from 'rollup-plugin-terser';
 
-const rollupTypescript = require('@rollup/plugin-typescript')
+const rollupTypescript = require('@rollup/plugin-typescript');
 
 export default {
   input: 'src/index.ts',
@@ -9,12 +9,14 @@ export default {
       file: 'dist/bundle.umd.js',
       format: 'umd',
       name: 'Djel',
+      exports: 'named',
     },
     {
       file: 'dist/bundle.umd.min.js',
       format: 'umd',
       name: 'Djel',
-      plugins: [terser()]
+      plugins: [terser()],
+      exports: 'named',
     },
     {
       file: 'dist/bundle.es.js',
@@ -23,8 +25,8 @@ export default {
     {
       file: 'dist/bundle.es.min.js',
       format: 'es',
-      plugins: [terser()]
+      plugins: [terser()],
     },
   ],
   plugins: [rollupTypescript({ tsconfig: './tsconfig-rollup.json' })],
-}
+};

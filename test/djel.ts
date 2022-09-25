@@ -13,6 +13,9 @@ describe('Djel', () => {
   it('should throw', () => {
     expect(() => djel.evaluate('2**2')).to.throw();
   });
+  it('should pass context', () => {
+    expect(djel.evaluate('foo', { foo: 'bar' })).to.equal('bar');
+  });
   it('should allow transforms to be defined', () => {
     djel.addTransforms({
       toCase: (val: string, args: { case: 'upper' | 'lower' }) => {
@@ -46,9 +49,6 @@ describe('Djel', () => {
     expect(djel.evaluate('2|add1')).to.equal(3);
     djel.removeTransform('add1');
     expect(() => djel.evaluate('2|add1')).to.throw();
-  });
-  it('should pass context', () => {
-    expect(djel.evaluate('foo', { foo: 'bar' })).to.equal('bar');
   });
   it('should allow binaryOps to be defined', () => {
     djel.addBinaryOps({
@@ -96,54 +96,5 @@ describe('Djel', () => {
     const expr = djel.compile('{x: y, y: x}');
     expect(expr.evaluate({ x: 1, y: 2 })).to.deep.equal({ x: 2, y: 1 });
     expect(expr.evaluate({ x: 3, y: 4 })).to.deep.equal({ x: 4, y: 3 });
-  });
-  it('should handle priority correctly', () => {
-    expect(djel.evaluate('3 + 4 * 5')).to.equal(23);
-    expect(djel.evaluate('(3 + 4) * 5')).to.equal(35);
-    expect(djel.evaluate('4 * 3 ^ 2')).to.equal(36);
-    expect(djel.evaluate('4 / 3 / 2')).to.equal(4 / 3 / 2);
-  });
-  it('should index array', () => {
-    expect(djel.evaluate('a[0]', { a: [1, 2, 3] })).to.equal(1);
-    expect(djel.evaluate('a[-1]', { a: [1, 2, 3] })).to.equal(3);
-    expect(djel.evaluate('a[1+1]', { a: [1, 2, 3] })).to.equal(3);
-  });
-  it('should access member', () => {
-    expect(djel.evaluate('a.x', { a: { x: 1 } })).to.equal(1);
-    expect(djel.evaluate('a["x"]', { a: { x: 1 } })).to.equal(1);
-  });
-
-  describe('Grammars', () => {
-    it('+', () => {
-      expect(djel.evaluate('+1')).to.equal(1);
-      expect(djel.evaluate('2+1')).to.equal(2 + 1);
-      expect(djel.evaluate('+x.y', { x: { y: '1' } })).to.equal(1);
-      expect(djel.evaluate('[1,2]+[3,4]')).to.deep.equal([1, 2, 3, 4]);
-    });
-    it('-', () => {
-      expect(djel.evaluate('-1')).to.equal(-1);
-      expect(djel.evaluate('2-1')).to.equal(2 - 1);
-      expect(djel.evaluate('-x.y', { x: { y: 1 } })).to.equal(-1);
-    });
-    it('%', () => {
-      expect(djel.evaluate('4%3')).to.equal(4 % 3);
-    });
-    it('^', () => {
-      expect(djel.evaluate('4^3')).to.equal(Math.pow(4, 3));
-    });
-    it('!=', () => {
-      expect(djel.evaluate('4!=3')).to.equal(true);
-    });
-    it('<', () => {
-      expect(djel.evaluate('4<3')).to.equal(false);
-    });
-    it('in', () => {
-      expect(djel.evaluate('4 in "1234"')).to.equal(true);
-      expect(djel.evaluate('4 in [1,2,3,4]')).to.equal(true);
-      expect(djel.evaluate('4 in {x:4}')).to.equal(false);
-    });
-    it('!', () => {
-      expect(djel.evaluate('!3')).to.equal(false);
-    });
   });
 });

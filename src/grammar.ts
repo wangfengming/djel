@@ -17,7 +17,7 @@ import type { Grammar } from './types';
  */
 
 export const PIPE_PRIORITY = 80;
-export const INDEX_PRIORITY = 100;
+export const MEMBER_PRIORITY = 100;
 export const FUNCTION_CALL_PRIORITY = 100;
 
 /**
@@ -76,11 +76,11 @@ export const getGrammar = (): Grammar => ({
     },
     '==': {
       priority: 30,
-      fn: (left, right) => left === right,
+      fn: (left, right) => (left === right || (left == null && right == null)),
     },
     '!=': {
       priority: 30,
-      fn: (left, right) => left !== right,
+      fn: (left, right) => (left !== right) && !(left == null && right == null),
     },
     '>': {
       priority: 40,

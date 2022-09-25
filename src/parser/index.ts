@@ -1,8 +1,8 @@
 import type {
   AstNode,
-  BinaryExpressionNode,
-  UnaryExpressionNode,
-  IndexExpressionNode,
+  BinaryNode,
+  UnaryNode,
+  MemberNode,
   LambdaNode,
   Token,
   TokenType,
@@ -70,10 +70,10 @@ export class Parser {
     const startExpr = this._exprStr;
     this._exprStr += token.raw;
     if (state.subHandler) {
-      if (!this._subParser) this._startSubExpression(startExpr);
+      if (!this._subParser) this._startSubExp(startExpr);
       const stopState = this._subParser!.addToken(token);
       if (stopState) {
-        this._endSubExpression();
+        this._endSubExp();
         if (this._parentStop) return stopState;
         this._state = stopState;
       }
@@ -109,7 +109,7 @@ export class Parser {
     if (this._cursor && !states[this._state].completable) {
       throw new Error(`Unexpected end of expression: ${this._exprStr}`);
     }
-    if (this._subParser) this._endSubExpression();
+    if (this._subParser) this._endSubExp();
     this._state = 'complete';
     if (this._lambda) {
       Object.defineProperty(this._tree, '_lambda', { value: true, writable: true });
@@ -127,7 +127,7 @@ export class Parser {
     if (!this._cursor) {
       this._tree = node;
     } else {
-      (this._cursor as BinaryExpressionNode | UnaryExpressionNode | IndexExpressionNode).right = node;
+      (this._cursor as BinaryNode | UnaryNode | MemberNode).right = node;
       this._setParent(node, this._cursor);
     }
     this._cursor = node;
@@ -162,7 +162,7 @@ export class Parser {
    * subParser.
    * @param {string} [exprStr] The expression string to prefix to the new Parser
    */
-  _startSubExpression(exprStr: string) {
+  _startSubExp(exprStr: string) {
     let endStates = states[this._state].endStates;
     if (!endStates) {
       this._parentStop = true;
@@ -175,7 +175,7 @@ export class Parser {
    * Ends a subexpression by completing the subParser and passing its result
    * to the subHandler configured in the current state.
    */
-  _endSubExpression() {
+  _endSubExp() {
     const ast = this._subParser!.complete();
     if (ast && ast._lambda) this._lambda = true;
     states[this._state].subHandler!.call(this, ast);
@@ -198,15 +198,16 @@ export class Parser {
   }
 
   /**
-   * Get the priority of a BinaryExpression or UnaryExpression
+   * Get the priority of a Binary or Unary
    */
   _getPriority(ast: AstNode) {
-    if (ast.type === 'BinaryExpression') {
+    if (ast.type === 'Binary') {
       return this._grammar.binaryOps[ast.operator].priority;
     }
-    if (ast.type === 'UnaryExpression') {
+    if (ast.type === 'Unary') {
       return this._grammar.unaryOps[ast.operator].priority;
     }
+    /* istanbul ignore next */
     return 0;
   }
 
