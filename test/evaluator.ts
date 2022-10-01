@@ -179,11 +179,6 @@ describe('Evaluator', () => {
       const e = Evaluator(grammar, context);
       expect(e.evaluate(toTree('foo["ba" + "z"].bar'))).to.equal(context.foo.baz.bar);
     });
-    it('should allow simple index on undefined objects', () => {
-      const context = { foo: {} };
-      const e = Evaluator(grammar, context);
-      return expect(e.evaluate(toTree('foo.bar["baz"].tok'))).to.equal(undefined);
-    });
     it('should allow index on string literal', () => {
       const e = Evaluator(grammar);
       expect(e.evaluate(toTree('"abc"[0]'))).to.equal('a');
@@ -191,6 +186,41 @@ describe('Evaluator', () => {
     it('should allow access to literal properties', () => {
       const e = Evaluator(grammar);
       expect(e.evaluate(toTree('"foo".length'))).to.equal(3);
+    });
+  });
+  describe('Optional Chain', () => {
+    it('optional chain (null)?.bar.baz', () => {
+      const context = {};
+      const e = Evaluator(grammar, context);
+      expect(e.evaluate(toTree('foo?.bar.baz'))).to.equal(undefined);
+    });
+    it('optional chain (...)?.bar.baz', () => {
+      const context = { foo: {} };
+      const e = Evaluator(grammar, context);
+      expect(() => e.evaluate(toTree('foo?.bar.baz'))).to
+        .throw('Cannot read properties of undefined (reading baz)');
+    });
+    it('optional chain (null)?.["bar"].baz', () => {
+      const context = {};
+      const e = Evaluator(grammar, context);
+      expect(e.evaluate(toTree('foo?.["bar"].baz'))).to.equal(undefined);
+    });
+    it('optional chain (...)?.["bar"].baz', () => {
+      const context = { foo: {} };
+      const e = Evaluator(grammar, context);
+      expect(() => e.evaluate(toTree('foo?.["bar"].baz'))).to
+        .throw('Cannot read properties of undefined (reading baz)');
+    });
+    it('optional chain (null)?.().baz', () => {
+      const context = {};
+      const e = Evaluator(grammar, context);
+      expect(e.evaluate(toTree('foo?.().baz'))).to.equal(undefined);
+    });
+    it('optional chain (...)?.().baz', () => {
+      const context = { foo: () => undefined };
+      const e = Evaluator(grammar, context);
+      expect(() => e.evaluate(toTree('foo?.().baz'))).to
+        .throw('Cannot read properties of undefined (reading baz)');
     });
   });
   describe('Object', () => {
@@ -219,7 +249,7 @@ describe('Evaluator', () => {
     it('should allow properties on empty arrays', () => {
       const context = { foo: {} };
       const e = Evaluator(grammar, context);
-      return expect(e.evaluate(toTree('[].baz'))).to.equal(undefined);
+      expect(e.evaluate(toTree('[].baz'))).to.equal(undefined);
     });
   });
   describe('Transform', () => {
@@ -256,8 +286,9 @@ describe('Evaluator', () => {
         .to.equal('foo: bazbartek');
     });
     it('should throw when transform does not exist', () => {
-      const e = Evaluator(grammar);
-      return expect(() => e.evaluate(toTree('"hello"|world'))).to.throw();
+      const e = Evaluator(grammar, {});
+      expect(() => e.evaluate(toTree('"hello"|world'))).to
+        .throw('undefined is not a function');
     });
     it('should filter arrays', () => {
       const context = {
@@ -322,6 +353,11 @@ describe('Evaluator', () => {
       expect(e.evaluate(tree2)).to.equal(8);
       const tree3 = toTree('fns["ha" + "lf"](foo) + 3');
       expect(e.evaluate(tree3)).to.equal(8);
+    });
+    it('should throw when function does not exist', () => {
+      const e = Evaluator(grammar, {});
+      expect(() => e.evaluate(toTree('world()'))).to
+        .throw('undefined is not a function');
     });
   });
   describe('Whitespaces', () => {

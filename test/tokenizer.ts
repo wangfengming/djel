@@ -10,7 +10,7 @@ describe('tokenizer', () => {
   });
 
   it('symbol', () => {
-    expect(tokenizer.tokenize('[]{}:,()?.')).to.deep.equal([
+    expect(tokenizer.tokenize('[]{}:,()? . ?. ?.[ ?.(')).to.deep.equal([
       { type: 'openBracket', value: '[', raw: '[' },
       { type: 'closeBracket', value: ']', raw: ']' },
       { type: 'openCurly', value: '{', raw: '{' },
@@ -19,8 +19,11 @@ describe('tokenizer', () => {
       { type: 'comma', value: ',', raw: ',' },
       { type: 'openParen', value: '(', raw: '(' },
       { type: 'closeParen', value: ')', raw: ')' },
-      { type: 'question', value: '?', raw: '?' },
-      { type: 'dot', value: '.', raw: '.' },
+      { type: 'question', value: '?', raw: '? ' },
+      { type: 'dot', value: '.', raw: '. ' },
+      { type: 'optionalDot', value: '?.', raw: '?. ' },
+      { type: 'optionalBracket', value: '?.[', raw: '?.[ ' },
+      { type: 'optionalParen', value: '?.(', raw: '?.(' },
     ]);
   });
   it('binaryOp', () => {
@@ -185,6 +188,7 @@ describe('tokenizer', () => {
     ]);
   });
   it('throw for invalid token', () => {
-    expect(() => tokenizer.tokenize('~')).to.throw();
+    expect(() => tokenizer.tokenize('~')).to
+      .throw('Invalid expression token: ~');
   });
 });

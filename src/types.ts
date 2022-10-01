@@ -2,12 +2,15 @@ import type { Parser } from './parser';
 
 export type SymbolType =
   | 'openBracket'
+  | 'optionalBracket'
   | 'closeBracket'
   | 'openCurly'
   | 'closeCurly'
   | 'openParen'
+  | 'optionalParen'
   | 'closeParen'
   | 'dot'
+  | 'optionalDot'
   | 'colon'
   | 'comma'
   | 'question'
@@ -114,7 +117,12 @@ export interface UnaryNode extends AstNodeBase {
   right: AstNode;
 }
 
-export interface MemberNode extends AstNodeBase {
+export interface OptionalBase {
+  optional?: boolean;
+  leftOptional?: boolean;
+}
+
+export interface MemberNode extends AstNodeBase, OptionalBase {
   type: 'Member';
   computed?: boolean;
   left: AstNode;
@@ -138,7 +146,7 @@ export interface ConditionalNode extends AstNodeBase {
   alternate: AstNode;
 }
 
-export interface FunctionCallNode extends AstNodeBase {
+export interface FunctionCallNode extends AstNodeBase, OptionalBase {
   type: 'FunctionCall';
   func: AstNode;
   args: AstNode[];

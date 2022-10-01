@@ -11,7 +11,7 @@ describe('Djel', () => {
     expect(djel.evaluate('2+2')).to.equal(4);
   });
   it('should throw', () => {
-    expect(() => djel.evaluate('2**2')).to.throw();
+    expect(() => djel.evaluate('2**2')).to.throw('Token * unexpected in expression: 2**');
   });
   it('should pass context', () => {
     expect(djel.evaluate('foo', { foo: 'bar' })).to.equal('bar');
@@ -56,7 +56,7 @@ describe('Djel', () => {
     });
     expect(djel.evaluate('2|add1')).to.equal(3);
     djel.removeTransform('add1');
-    expect(() => djel.evaluate('2|add1')).to.throw();
+    expect(() => djel.evaluate('2|add1')).to.throw('No context provided for evaluate');
   });
   it('should allow binaryOps to be defined', () => {
     djel.addBinaryOps({
@@ -94,11 +94,11 @@ describe('Djel', () => {
   });
   it('should allow binaryOps to be removed', () => {
     djel.removeOp('+');
-    expect(() => djel.evaluate('1+2')).to.throw();
+    expect(() => djel.evaluate('1+2')).to.throw('Invalid expression token: +');
   });
   it('should allow unaryOps to be removed', () => {
     djel.removeOp('!');
-    expect(() => djel.evaluate('!true')).to.throw();
+    expect(() => djel.evaluate('!true')).to.throw('Invalid expression token: !');
   });
   it('should allow compile result to be reused', () => {
     const expr = djel.compile('{x: y, y: x}');

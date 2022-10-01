@@ -28,6 +28,8 @@ import type {
  *      value.
  * @param [args] arguments for lambda
  */
+const NullSignal = {};
+
 export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
   const handlers = {
     /**
@@ -43,7 +45,10 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
      */
     Identifier: (ast: IdentifierNode) => {
       if (args && ast.argIndex !== undefined) return args[ast.argIndex];
-      return context != null ? context[ast.value] : undefined;
+      if (context == null) {
+        throw new Error(`No context provided for evaluate`);
+      }
+      return context[ast.value];
     },
     /**
      * Evaluates a Unary expression by passing the right side through the
@@ -68,10 +73,16 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
     /**
      * Evaluates a Member by applying it to the subject value.
      * @param ast An expression tree with a Member as the top node
+     * @param nullSignal optional chain null signal
      */
-    Member: (ast: MemberNode) => {
-      const left = evaluate(ast.left);
-      if (left == null) return;
+    Member: (ast: MemberNode, nullSignal?: boolean) => {
+      const left = evaluate(ast.left, ast.leftOptional);
+      if (left === NullSignal || (left == null && ast.optional)) {
+        return nullSignal ? NullSignal : undefined;
+      }
+      if (left == null) {
+        throw new Error(`Cannot read properties of ${left} (reading ${evaluate(ast.right)})`);
+      }
       const key = evaluate(ast.right);
       if (Array.isArray(left) && key < 0) {
         return left[left.length + key];
@@ -114,11 +125,15 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
     /**
      * Evaluates a FunctionCall node by applying a function from the transforms map or a Lambda or Context.
      * @param ast An expression tree with a Transform as the top node
+     * @param nullSignal optional chain null signal
      */
-    FunctionCall: (ast: FunctionCallNode) => {
+    FunctionCall: (ast: FunctionCallNode, nullSignal?: boolean) => {
       const fn = ast.func.type === 'Identifier'
-        ? (grammar.transforms[ast.func.value] || evaluate(ast.func))
-        : evaluate(ast.func);
+        ? (grammar.transforms[ast.func.value] || evaluate(ast.func, ast.leftOptional))
+        : evaluate(ast.func, ast.leftOptional);
+      if (fn === NullSignal || (fn == null && ast.optional)) {
+        return nullSignal ? NullSignal : undefined;
+      }
       if (typeof fn !== 'function') {
         throw new Error(`${fn} is not a function`);
       }
@@ -141,10 +156,11 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
   /**
    * Evaluates an expression tree within the configured context.
    * @param ast An expression tree object
+   * @param nullSignal optional chain null signal
    * @returns the resulting value of the expression.
    */
-  const evaluate = <T = any>(ast: AstNode): T => {
-    return handlers[ast.type](ast as any);
+  const evaluate = <T = any>(ast: AstNode, nullSignal?: boolean): T => {
+    return handlers[ast.type](ast as any, nullSignal);
   };
 
   return { evaluate };

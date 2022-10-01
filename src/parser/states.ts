@@ -29,6 +29,19 @@ import { handlers, subHandlers } from './handlers';
  * call Parser#complete in any state without this property will result
  * in a thrown Error.
  */
+
+const expectBinOpTokenTypes: State['tokenTypes'] = {
+  binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
+  openBracket: { toState: 'computedMember', handler: handlers.computedMember },
+  optionalBracket: { toState: 'computedMember', handler: handlers.computedMember },
+  dot: { toState: 'member', handler: handlers.member },
+  optionalDot: { toState: 'member', handler: handlers.member },
+  openParen: { toState: 'argVal', handler: handlers.functionCall },
+  optionalParen: { toState: 'argVal', handler: handlers.functionCall },
+  pipe: { toState: 'expectTransform' },
+  question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
+};
+
 export const states: Record<StateType, State> = {
   expectOperand: {
     tokenTypes: {
@@ -41,14 +54,7 @@ export const states: Record<StateType, State> = {
     },
   },
   expectBinOp: {
-    tokenTypes: {
-      binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
-      openBracket: { toState: 'computedMember' },
-      dot: { toState: 'member', handler: handlers.member },
-      pipe: { toState: 'expectTransform' },
-      question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
-      openParen: { toState: 'argVal', handler: handlers.functionCall },
-    },
+    tokenTypes: expectBinOpTokenTypes,
     completable: true,
   },
   member: {
@@ -77,12 +83,9 @@ export const states: Record<StateType, State> = {
   },
   postTransform: {
     tokenTypes: {
+      ...expectBinOpTokenTypes,
       openParen: { toState: 'argVal' },
-      binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
-      openBracket: { toState: 'computedMember' },
-      dot: { toState: 'member', handler: handlers.member },
-      pipe: { toState: 'expectTransform' },
-      question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
+      optionalParen: undefined,
     },
     completable: true,
   },
@@ -100,7 +103,7 @@ export const states: Record<StateType, State> = {
     },
   },
   computedMember: {
-    subHandler: subHandlers.computedMember,
+    subHandler: subHandlers.computedMemberProperty,
     endStates: {
       closeBracket: 'expectBinOp',
     },

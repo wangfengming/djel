@@ -26,14 +26,17 @@ export const FUNCTION_CALL_PRIORITY = 100;
 export const getGrammar = (): Grammar => ({
   symbols: {
     '[': { type: 'openBracket' },
+    '?.[': { type: 'optionalBracket' },
     ']': { type: 'closeBracket' },
     '|': { type: 'pipe' },
     '{': { type: 'openCurly' },
     '}': { type: 'closeCurly' },
     '.': { type: 'dot' },
+    '?.': { type: 'optionalDot' },
     ':': { type: 'colon' },
     ',': { type: 'comma' },
     '(': { type: 'openParen' },
+    '?.(': { type: 'optionalParen' },
     ')': { type: 'closeParen' },
     '?': { type: 'question' },
   },

@@ -4,6 +4,7 @@ import type {
   UnaryNode,
   MemberNode,
   LambdaNode,
+  OptionalBase,
   Token,
   TokenType,
   StateType,
@@ -223,5 +224,10 @@ export class Parser {
    */
   _maybeLambda(ast: AstNode) {
     return ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
+  }
+
+  _leftOptional(ast: OptionalBase) {
+    const left = this._cursor as OptionalBase;
+    if (left.optional || left.leftOptional) ast.leftOptional = true;
   }
 }

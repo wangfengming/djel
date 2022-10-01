@@ -60,12 +60,29 @@ export const handlers = {
       left: this._cursor,
     } as BinaryNode);
   },
-  member(this: Parser) {
+  member(this: Parser, token: Token) {
     this._rotatePriority(MEMBER_PRIORITY);
-    this._placeBeforeCursor({ type: 'Member', left: this._cursor! } as MemberNode);
+    const node = {
+      type: 'Member',
+      left: this._cursor!,
+    } as MemberNode;
+    if (token.type === 'optionalDot') node.optional = true;
+    this._leftOptional(node);
+    this._placeBeforeCursor(node);
   },
   memberProperty(this: Parser, token: Token) {
     this._placeAtCursor({ type: 'Literal', value: token.value });
+  },
+  computedMember(this: Parser, token: Token) {
+    this._rotatePriority(MEMBER_PRIORITY);
+    const node = {
+      type: 'Member',
+      computed: true,
+      left: this._cursor!,
+    } as MemberNode;
+    if (token.type === 'optionalBracket') node.optional = true;
+    this._leftOptional(node);
+    this._placeBeforeCursor(node);
   },
   /**
    * Handles new array literals by adding them as a new node in the AST,
@@ -124,13 +141,16 @@ export const handlers = {
    * handles open paren tokens when used to indicate the expression
    * of a function left on paren to be called.
    */
-  functionCall(this: Parser) {
+  functionCall(this: Parser, token: Token) {
     this._rotatePriority(FUNCTION_CALL_PRIORITY);
-    this._placeBeforeCursor({
+    const node = {
       type: 'FunctionCall',
       func: this._cursor!,
       args: [],
-    });
+    } as FunctionCallNode;
+    if (token.type === 'optionalParen') node.optional = true;
+    this._leftOptional(node);
+    this._placeBeforeCursor(node);
   },
 };
 
@@ -199,13 +219,7 @@ export const subHandlers = {
    * Handles a subexpression used for member access an object.
    * @param ast The subexpression tree
    */
-  computedMember(this: Parser, ast: AstNode) {
-    this._rotatePriority(MEMBER_PRIORITY);
-    this._placeBeforeCursor({
-      type: 'Member',
-      computed: true,
-      left: this._cursor!,
-      right: ast,
-    });
+  computedMemberProperty(this: Parser, ast: AstNode) {
+    (this._cursor as MemberNode).right = ast;
   },
 };

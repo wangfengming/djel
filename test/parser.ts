@@ -344,6 +344,124 @@ describe('Parser', () => {
       });
     });
   });
+  describe('Optional Chain', () => {
+    it('member access ?.', () => {
+      const tokens = tokenizer.tokenize('foo?.bar.baz');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'Member',
+        leftOptional: true,
+        left: {
+          type: 'Member',
+          optional: true,
+          left: {
+            type: 'Identifier',
+            value: 'foo',
+          },
+          right: {
+            type: 'Literal',
+            value: 'bar',
+          },
+        },
+        right: {
+          type: 'Literal',
+          value: 'baz',
+        },
+      });
+    });
+    it('member access ?.[', () => {
+      const tokens = tokenizer.tokenize('foo?.["bar"].baz');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'Member',
+        leftOptional: true,
+        left: {
+          type: 'Member',
+          computed: true,
+          optional: true,
+          left: {
+            type: 'Identifier',
+            value: 'foo',
+          },
+          right: {
+            type: 'Literal',
+            value: 'bar',
+          },
+        },
+        right: {
+          type: 'Literal',
+          value: 'baz',
+        },
+      });
+    });
+    it('member access ?.(', () => {
+      const tokens = tokenizer.tokenize('foo?.().baz');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'Member',
+        leftOptional: true,
+        left: {
+          type: 'FunctionCall',
+          optional: true,
+          func: {
+            type: 'Identifier',
+            value: 'foo',
+          },
+          args: [],
+        },
+        right: {
+          type: 'Literal',
+          value: 'baz',
+        },
+      });
+    });
+    it('left optional [', () => {
+      const tokens = tokenizer.tokenize('foo?.bar["baz"]');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'Member',
+        computed: true,
+        leftOptional: true,
+        left: {
+          type: 'Member',
+          optional: true,
+          left: {
+            type: 'Identifier',
+            value: 'foo',
+          },
+          right: {
+            type: 'Literal',
+            value: 'bar',
+          },
+        },
+        right: {
+          type: 'Literal',
+          value: 'baz',
+        },
+      });
+    });
+    it('left optional (', () => {
+      const tokens = tokenizer.tokenize('foo?.bar()');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'FunctionCall',
+        leftOptional: true,
+        func: {
+          type: 'Member',
+          optional: true,
+          left: {
+            type: 'Identifier',
+            value: 'foo',
+          },
+          right: {
+            type: 'Literal',
+            value: 'bar',
+          },
+        },
+        args: [],
+      });
+    });
+  });
   describe('Whitespaces', () => {
     it('Whitespaces in expression', () => {
       parser.addTokens(tokenizer.tokenize('\t2\r\n+\n\r3\n\n'));
@@ -359,14 +477,17 @@ describe('Parser', () => {
     it('should throw if addToken after complete', () => {
       parser.addTokens(tokenizer.tokenize('a.b == c.d'));
       parser.complete();
-      expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to.throw();
+      expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to
+        .throw('Cannot add a new token to a completed Parser');
     });
     it('should throw if add unexpected token', () => {
-      expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to.throw();
+      expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to
+        .throw('Invalid expression token: =');
     });
     it('should throw if token is not complete', () => {
       parser.addTokens(tokenizer.tokenize('a.b == c.d +'));
-      expect(() => parser.complete()).to.throw();
+      expect(() => parser.complete()).to
+        .throw('Unexpected end of expression: a.b == c.d +');
     });
   });
   describe('Object literals', () => {

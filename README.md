@@ -173,6 +173,9 @@ Access variables in the context object by just typing their name. Objects can
 be traversed with dot notation, or by using brackets to traverse to a dynamic
 property name.
 
+The optional chaining operator (`?.`) accesses an object's property or calls a function.
+If the object is `undefined` or `null`, it returns `undefined` instead of throwing an error.
+
 Example context:
 
 ```javascript
@@ -199,6 +202,7 @@ Example context:
 | `exes[lastEx - 1]`  | `"Len Trexler"`   |
 | `exes[-1]`          | `"Burt Reynolds"` |
 | `exes[-2]`          | `"Len Trexler"`   |
+| `foo?.bar.baz`      | `undefined`       |
 
 #### A note about array index:
 
@@ -349,18 +353,18 @@ a `left` value and a `right` value.
 
 The `priority` of existing operators (please refer to `src/grammar.ts`).
 
-| Priority |        Symbols         | Operators                 |
-|:--------:|:----------------------:|---------------------------|
-|    10    |      &#124;&#124;      | Logic OR                  |
-|    20    |          `&&`          | Logic AND                 |
-|    30    |       `==`  `!=`       | Equality                  |
-|    40    | `<=` `<` `>=` `>` `in` | Comparison                |
-|    50    |        `+` `-`         | Add, Concat, Subtract     |
-|    60    |    `*` `/` `//` `%`    | Multiply, Divide, Modulus |
-|    70    |          `^`           | Power of                  |
-|    80    |         &#124;         | Transform                 |
-|    90    |      `!` `+` `-`       | Unary                     |
-|   100    |        `[]` `.`        | Member access             |
+| Priority |             Symbols              | Operators                   |
+|:--------:|:--------------------------------:|-----------------------------|
+|    10    |           &#124;&#124;           | Logic OR                    |
+|    20    |               `&&`               | Logic AND                   |
+|    30    |            `==`  `!=`            | Equality                    |
+|    40    |      `<=` `<` `>=` `>` `in`      | Comparison                  |
+|    50    |             `+` `-`              | Add, Concat, Subtract       |
+|    60    |         `*` `/` `//` `%`         | Multiply, Divide, Modulus   |
+|    70    |               `^`                | Power of                    |
+|    80    |              &#124;              | Transform                   |
+|    90    |           `!` `+` `-`            | Unary                       |
+|   100    | `[]` `.` `()` `?.[]` `?.` `?.()` | Member access/Function Call |
 
 #### addUnaryOps
 
