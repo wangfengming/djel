@@ -117,6 +117,10 @@ describe('Evaluator', () => {
       const e = Evaluator(grammar, { a: [1, 2], b: [3, 4] });
       expect(e.evaluate(toTree('a+b'))).to.deep.equal([1, 2, 3, 4]);
     });
+    it('should evaluate a object concat', () => {
+      const e = Evaluator(grammar, { a: { x: 1 }, b: { y: 2 } });
+      expect(e.evaluate(toTree('a+b'))).to.deep.equal({ x: 1, y: 2 });
+    });
     it('should evaluate a true comparison expression', () => {
       const e = Evaluator(grammar);
       expect(e.evaluate(toTree('2 > 1'))).to.equal(true);
@@ -226,14 +230,22 @@ describe('Evaluator', () => {
       expect(e.evaluate(toTree('foo|half + 3'))).to.equal(8);
     });
     it('should apply data function transforms', () => {
-      const context = { foo: 10, fns: { half: (v: number) => v / 2 } };
+      const context = {
+        foo: 10,
+        double: (v: number) => v * 2,
+        fns: {
+          half: (v: number) => v / 2,
+        },
+      };
       const e = Evaluator(grammar, context);
-      const tree1 = toTree('foo|(fns.half) + 3');
-      expect(e.evaluate(tree1)).to.equal(8);
-      const tree2 = toTree('foo|(fns["half"]) + 3');
+      const tree1 = toTree('foo|double + 3');
+      expect(e.evaluate(tree1)).to.equal(23);
+      const tree2 = toTree('foo|(fns.half) + 3');
       expect(e.evaluate(tree2)).to.equal(8);
-      const tree3 = toTree('foo|(fns["ha" + "lf"]) + 3');
+      const tree3 = toTree('foo|(fns["half"]) + 3');
       expect(e.evaluate(tree3)).to.equal(8);
+      const tree4 = toTree('foo|(fns["ha" + "lf"]) + 3');
+      expect(e.evaluate(tree4)).to.equal(8);
     });
     it('should apply a transform with multiple args', () => {
       const concat = (val: string, a1: string, a2: string, a3: string) => {

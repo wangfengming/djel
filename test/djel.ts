@@ -32,15 +32,23 @@ describe('Djel', () => {
         { age: 17, name: 'Len Trexler' },
         { age: 19, name: 'Burt Reynolds' },
       ],
+      data: {
+        a: { x: 1 },
+        b: { y: 2 },
+        c: { z: 3 },
+      },
     };
     djel.addTransforms({
       filter: (arr: any[], by: (value: any) => any) => arr.filter(by),
       map: (arr: any[], by: (value: any) => any) => arr.map(by),
       sum: (arr: any[], by: (value: any) => number) => arr.reduce((s, i) => s + (by(i) || 0), 0),
+      values: (obj: any) => Object.values(obj),
+      reduce: (arr: any[], by: (acc: any, value: any) => any, initial: any) => arr.reduce(by, initial),
     });
     expect(djel.evaluate('users|filter(@.age<18)', context)).to.deep.equal([{ age: 17, name: 'Len Trexler' }]);
     expect(djel.evaluate('users|map(@.age)', context)).to.deep.equal([18, 17, 19]);
     expect(djel.evaluate('users|sum(@.age)/users.length', context)).to.equal(18);
+    expect(djel.evaluate('data|values|reduce(@+@1,{})', context)).to.deep.equal({ x: 1, y: 2, z: 3 });
   });
   it('should allow transforms to be removed', () => {
     djel.addTransforms({

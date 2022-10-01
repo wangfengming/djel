@@ -43,10 +43,17 @@ export const states: Record<StateType, State> = {
   expectBinOp: {
     tokenTypes: {
       binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
-      openBracket: { toState: 'member' },
+      openBracket: { toState: 'computedMember' },
+      dot: { toState: 'member', handler: handlers.member },
       pipe: { toState: 'expectTransform' },
       question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
       openParen: { toState: 'argVal', handler: handlers.functionCall },
+    },
+    completable: true,
+  },
+  member: {
+    tokenTypes: {
+      identifier: { toState: 'expectBinOp', handler: handlers.memberProperty },
     },
     completable: true,
   },
@@ -72,7 +79,8 @@ export const states: Record<StateType, State> = {
     tokenTypes: {
       openParen: { toState: 'argVal' },
       binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
-      openBracket: { toState: 'member' },
+      openBracket: { toState: 'computedMember' },
+      dot: { toState: 'member', handler: handlers.member },
       pipe: { toState: 'expectTransform' },
       question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
     },
@@ -91,8 +99,8 @@ export const states: Record<StateType, State> = {
       closeParen: 'expectBinOp',
     },
   },
-  member: {
-    subHandler: subHandlers.member,
+  computedMember: {
+    subHandler: subHandlers.computedMember,
     endStates: {
       closeBracket: 'expectBinOp',
     },

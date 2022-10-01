@@ -10,7 +10,7 @@ describe('tokenizer', () => {
   });
 
   it('symbol', () => {
-    expect(tokenizer.tokenize('[]{}:,()?')).to.deep.equal([
+    expect(tokenizer.tokenize('[]{}:,()?.')).to.deep.equal([
       { type: 'openBracket', value: '[', raw: '[' },
       { type: 'closeBracket', value: ']', raw: ']' },
       { type: 'openCurly', value: '{', raw: '{' },
@@ -20,12 +20,12 @@ describe('tokenizer', () => {
       { type: 'openParen', value: '(', raw: '(' },
       { type: 'closeParen', value: ')', raw: ')' },
       { type: 'question', value: '?', raw: '?' },
+      { type: 'dot', value: '.', raw: '.' },
     ]);
   });
   it('binaryOp', () => {
-    const tokens = tokenizer.tokenize('. 1 + 1 - 1 * / // % ^ == != > >= < <= && || in');
+    const tokens = tokenizer.tokenize('1 + 1 - 1 * / // % ^ == != > >= < <= && || in');
     expect(tokens).to.deep.equal([
-      { type: 'binaryOp', value: '.', raw: '. ' },
       { type: 'literal', value: '1', raw: '1 ', literal: 1 },
       { type: 'binaryOp', value: '+', raw: '+ ' },
       { type: 'literal', value: '1', raw: '1 ', literal: 1 },
@@ -121,7 +121,7 @@ describe('tokenizer', () => {
     ]);
   });
   it('full expression', () => {
-    const tokens = tokenizer.tokenize('6+x -  -17.55*y<= !foo.bar["baz\\"foz"]|filter(@3>1)');
+    const tokens = tokenizer.tokenize('6+x -  -17.55*y<= !foo.bar["baz\\"foz"]|filter(@3>@)');
     expect(tokens).to.deep.equal([
       { type: 'literal', value: '6', raw: '6', literal: 6 },
       { type: 'binaryOp', value: '+', raw: '+' },
@@ -134,7 +134,7 @@ describe('tokenizer', () => {
       { type: 'binaryOp', value: '<=', raw: '<= ' },
       { type: 'unaryOp', value: '!', raw: '!' },
       { type: 'identifier', value: 'foo', raw: 'foo' },
-      { type: 'binaryOp', value: '.', raw: '.' },
+      { type: 'dot', value: '.', raw: '.' },
       { type: 'identifier', value: 'bar', raw: 'bar' },
       { type: 'openBracket', value: '[', raw: '[' },
       { type: 'literal', value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },
@@ -142,9 +142,9 @@ describe('tokenizer', () => {
       { type: 'pipe', value: '|', raw: '|' },
       { type: 'identifier', value: 'filter', raw: 'filter' },
       { type: 'openParen', value: '(', raw: '(' },
-      { type: 'identifier', value: '@3', raw: '@3' },
+      { type: 'identifier', value: '@3', raw: '@3', argIndex: 3 },
       { type: 'binaryOp', value: '>', raw: '>' },
-      { type: 'literal', value: '1', raw: '1', literal: 1 },
+      { type: 'identifier', value: '@', raw: '@', argIndex: 0 },
       { type: 'closeParen', value: ')', raw: ')' },
     ]);
   });
@@ -168,7 +168,7 @@ describe('tokenizer', () => {
       { type: 'binaryOp', value: '<=', raw: '<= ' },
       { type: 'unaryOp', value: '!', raw: '!' },
       { type: 'identifier', value: 'foo', raw: 'foo' },
-      { type: 'binaryOp', value: '.', raw: '.' },
+      { type: 'dot', value: '.', raw: '.' },
       { type: 'identifier', value: 'bar', raw: 'bar' },
       { type: 'openBracket', value: '[', raw: '[' },
       { type: 'literal', value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },

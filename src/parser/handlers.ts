@@ -1,9 +1,10 @@
 import type { Parser } from './index';
 import type {
   AstNode,
-  LiteralNode,
+  IdentifierNode,
   UnaryNode,
   BinaryNode,
+  MemberNode,
   ArrayNode,
   ObjectNode,
   ConditionalNode,
@@ -27,11 +28,10 @@ export const handlers = {
    */
   identifier(this: Parser, token: Token) {
     const identifier = token.value;
-    let node: AstNode = { type: 'Identifier', value: identifier };
-    if (identifier.match(/@(\d?)/)) {
+    const node = { type: 'Identifier', value: identifier } as IdentifierNode;
+    if (token.argIndex !== undefined) {
+      node.argIndex = token.argIndex;
       this._lambda = true;
-    } else if (this._cursor && this._cursor.type === 'Binary' && this._cursor.operator === '.') {
-      node = { type: 'Literal', value: identifier } as LiteralNode;
     }
     this._placeAtCursor(node);
   },
@@ -53,12 +53,19 @@ export const handlers = {
    */
   binaryOp(this: Parser, token: Token) {
     const binaryOp = this._grammar.binaryOps[token.value];
-    this._priority(binaryOp.priority, binaryOp.rtl);
+    this._rotatePriority(binaryOp.priority, binaryOp.rtl);
     this._placeBeforeCursor({
       type: 'Binary',
       operator: token.value,
       left: this._cursor,
     } as BinaryNode);
+  },
+  member(this: Parser) {
+    this._rotatePriority(MEMBER_PRIORITY);
+    this._placeBeforeCursor({ type: 'Member', left: this._cursor! } as MemberNode);
+  },
+  memberProperty(this: Parser, token: Token) {
+    this._placeAtCursor({ type: 'Literal', value: token.value });
   },
   /**
    * Handles new array literals by adding them as a new node in the AST,
@@ -103,23 +110,25 @@ export const handlers = {
    * @param token A token object
    */
   transform(this: Parser, token: Token) {
-    this._priority(PIPE_PRIORITY);
-    const name = token.value;
+    this._rotatePriority(PIPE_PRIORITY);
+    const func = token.type === 'identifier'
+      ? { type: 'Identifier', value: token.value } as IdentifierNode
+      : undefined;
     this._placeBeforeCursor({
       type: 'FunctionCall',
-      name: name === '(' ? undefined : name,
+      func,
       args: [this._cursor!],
-    });
+    } as FunctionCallNode);
   },
   /**
    * handles open paren tokens when used to indicate the expression
    * of a function left on paren to be called.
    */
   functionCall(this: Parser) {
-    this._priority(FUNCTION_CALL_PRIORITY);
+    this._rotatePriority(FUNCTION_CALL_PRIORITY);
     this._placeBeforeCursor({
       type: 'FunctionCall',
-      expr: this._cursor,
+      func: this._cursor!,
       args: [],
     });
   },
@@ -168,7 +177,7 @@ export const subHandlers = {
    */
   exprTransform(this: Parser, ast: AstNode) {
     this._lambda = false;
-    (this._cursor as FunctionCallNode).expr = this._maybeLambda(ast);
+    (this._cursor as FunctionCallNode).func = this._maybeLambda(ast);
   },
   /**
    * Handles a subexpression that's used to define a transform argument's value.
@@ -190,10 +199,11 @@ export const subHandlers = {
    * Handles a subexpression used for member access an object.
    * @param ast The subexpression tree
    */
-  member(this: Parser, ast: AstNode) {
-    this._priority(MEMBER_PRIORITY);
+  computedMember(this: Parser, ast: AstNode) {
+    this._rotatePriority(MEMBER_PRIORITY);
     this._placeBeforeCursor({
       type: 'Member',
+      computed: true,
       left: this._cursor!,
       right: ast,
     });

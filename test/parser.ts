@@ -157,25 +157,6 @@ describe('Parser', () => {
         right: { type: 'Literal', value: 5 },
       });
     });
-    it('should correctly balance a binary op between complex identifiers', () => {
-      parser.addTokens(tokenizer.tokenize('a.b == c.d'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
-        operator: '==',
-        left: {
-          type: 'Binary',
-          operator: '.',
-          left: { type: 'Identifier', value: 'a' },
-          right: { type: 'Literal', value: 'b' },
-        },
-        right: {
-          type: 'Binary',
-          operator: '.',
-          left: { type: 'Identifier', value: 'c' },
-          right: { type: 'Literal', value: 'd' },
-        },
-      });
-    });
   });
   describe('Ternary Expression', () => {
     it('ternary expression', () => {
@@ -241,11 +222,9 @@ describe('Parser', () => {
         type: 'Binary',
         operator: '+',
         left: {
-          type: 'Binary',
-          operator: '.',
+          type: 'Member',
           left: {
-            type: 'Binary',
-            operator: '.',
+            type: 'Member',
             left: {
               type: 'Identifier',
               value: 'foo',
@@ -267,16 +246,17 @@ describe('Parser', () => {
       parser.addTokens(tokenizer.tokenize('foo.bar[1 + 1][0].baz[2]'));
       expect(parser.complete()).to.deep.equal({
         type: 'Member',
+        computed: true,
         left: {
-          type: 'Binary',
-          operator: '.',
+          type: 'Member',
           left: {
             type: 'Member',
+            computed: true,
             left: {
               type: 'Member',
+              computed: true,
               left: {
-                type: 'Binary',
-                operator: '.',
+                type: 'Member',
                 left: { type: 'Identifier', value: 'foo' },
                 right: { type: 'Literal', value: 'bar' },
               },
@@ -300,14 +280,12 @@ describe('Parser', () => {
         type: 'Binary',
         operator: '+',
         left: {
-          type: 'Binary',
-          operator: '.',
+          type: 'Member',
           left: { type: 'Literal', value: 'foo' },
           right: { type: 'Literal', value: 'length' },
         },
         right: {
-          type: 'Binary',
-          operator: '.',
+          type: 'Member',
           left: {
             type: 'Object',
             entries: [
@@ -324,8 +302,7 @@ describe('Parser', () => {
     it('member access . on subexpressions', () => {
       parser.addTokens(tokenizer.tokenize('("foo" + "bar").length'));
       expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
-        operator: '.',
+        type: 'Member',
         left: {
           type: 'Binary',
           operator: '+',
@@ -338,8 +315,7 @@ describe('Parser', () => {
     it('member access . on arrays', () => {
       parser.addTokens(tokenizer.tokenize('["foo", "bar"].length'));
       expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
-        operator: '.',
+        type: 'Member',
         left: {
           type: 'Array',
           value: [
@@ -348,6 +324,23 @@ describe('Parser', () => {
           ],
         },
         right: { type: 'Literal', value: 'length' },
+      });
+    });
+    it('should correctly balance a binary op between complex identifiers', () => {
+      parser.addTokens(tokenizer.tokenize('a.b == c.d'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'Binary',
+        operator: '==',
+        left: {
+          type: 'Member',
+          left: { type: 'Identifier', value: 'a' },
+          right: { type: 'Literal', value: 'b' },
+        },
+        right: {
+          type: 'Member',
+          left: { type: 'Identifier', value: 'c' },
+          right: { type: 'Literal', value: 'd' },
+        },
       });
     });
   });
@@ -493,11 +486,10 @@ describe('Parser', () => {
         operator: '+',
         left: {
           type: 'FunctionCall',
-          name: 'tr',
+          func: { type: 'Identifier', value: 'tr' },
           args: [
             {
-              type: 'Binary',
-              operator: '.',
+              type: 'Member',
               left: { type: 'Identifier', value: 'foo' },
               right: { type: 'Literal', value: 'baz' },
             },
@@ -510,17 +502,16 @@ describe('Parser', () => {
       parser.addTokens(tokenizer.tokenize('foo|tr1|tr2.baz|tr3({bar:"tek"})'));
       expect(parser.complete()).to.deep.equal({
         type: 'FunctionCall',
-        name: 'tr3',
+        func: { type: 'Identifier', value: 'tr3' },
         args: [
           {
-            type: 'Binary',
-            operator: '.',
+            type: 'Member',
             left: {
               type: 'FunctionCall',
-              name: 'tr2',
+              func: { type: 'Identifier', value: 'tr2' },
               args: [{
                 type: 'FunctionCall',
-                name: 'tr1',
+                func: { type: 'Identifier', value: 'tr1' },
                 args: [{
                   type: 'Identifier',
                   value: 'foo',
@@ -545,7 +536,7 @@ describe('Parser', () => {
       parser.addTokens(tokenizer.tokenize('foo|bar("tek", 5, true)'));
       expect(parser.complete()).to.deep.equal({
         type: 'FunctionCall',
-        name: 'bar',
+        func: { type: 'Identifier', value: 'bar' },
         args: [
           { type: 'Identifier', value: 'foo' },
           { type: 'Literal', value: 'tek' },
@@ -559,8 +550,7 @@ describe('Parser', () => {
       parser.addTokens(tokens);
       expect(parser.complete()).to.deep.equal({
         type: 'FunctionCall',
-        name: undefined,
-        expr: { type: 'Identifier', value: 'test' },
+        func: { type: 'Identifier', value: 'test' },
         args: [
           { type: 'Identifier', value: 'arr' },
         ],
@@ -576,16 +566,14 @@ describe('Parser', () => {
         operator: '+',
         left: {
           type: 'FunctionCall',
-          name: undefined,
-          expr: {
+          func: {
             type: 'Lambda',
             expr: {
               type: 'Binary',
               operator: '>',
               left: {
-                type: 'Binary',
-                operator: '.',
-                left: { type: 'Identifier', value: '@' },
+                type: 'Member',
+                left: { type: 'Identifier', value: '@', argIndex: 0 },
                 right: { type: 'Literal', value: 'x' },
               },
               right: { type: 'Literal', value: 1 },
@@ -603,7 +591,7 @@ describe('Parser', () => {
       parser.addTokens(tokens);
       expect(parser.complete()).to.deep.equal({
         type: 'FunctionCall',
-        name: 'filter',
+        func: { type: 'Identifier', value: 'filter' },
         args: [
           { type: 'Identifier', value: 'arr' },
           {
@@ -614,9 +602,8 @@ describe('Parser', () => {
                 type: 'Binary',
                 operator: '>',
                 left: {
-                  type: 'Binary',
-                  operator: '.',
-                  left: { type: 'Identifier', value: '@1' },
+                  type: 'Member',
+                  left: { type: 'Identifier', value: '@1', argIndex: 1 },
                   right: { type: 'Literal', value: 'x' },
                 },
                 right: { type: 'Literal', value: 1 },

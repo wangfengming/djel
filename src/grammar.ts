@@ -30,6 +30,7 @@ export const getGrammar = (): Grammar => ({
     '|': { type: 'pipe' },
     '{': { type: 'openCurly' },
     '}': { type: 'closeCurly' },
+    '.': { type: 'dot' },
     ':': { type: 'colon' },
     ',': { type: 'comma' },
     '(': { type: 'openParen' },
@@ -37,15 +38,13 @@ export const getGrammar = (): Grammar => ({
     '?': { type: 'question' },
   },
   binaryOps: {
-    '.': {
-      priority: 100,
-      delay: true,
-      fn: (left, right) => left != null ? left[right()] : undefined,
-    },
     '+': {
       priority: 50,
       fn: (left, right) => {
-        if (Array.isArray(left)) return left.concat(right);
+        if (Array.isArray(left)) return right == null ? left : left.concat(right);
+        if (left && typeof left === 'object' || right && typeof right === 'object') {
+          return { ...left, ...right };
+        }
         return left + right;
       },
     },

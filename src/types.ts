@@ -1,17 +1,20 @@
 import type { Parser } from './parser';
 
+export type SymbolType =
+  | 'openBracket'
+  | 'closeBracket'
+  | 'openCurly'
+  | 'closeCurly'
+  | 'openParen'
+  | 'closeParen'
+  | 'dot'
+  | 'colon'
+  | 'comma'
+  | 'question'
+  | 'pipe';
+
 export interface SymbolGrammar {
-  type:
-    | 'openBracket'
-    | 'closeBracket'
-    | 'openCurly'
-    | 'closeCurly'
-    | 'openParen'
-    | 'closeParen'
-    | 'colon'
-    | 'comma'
-    | 'question'
-    | 'pipe';
+  type: SymbolType;
 }
 
 export interface BinaryOpGrammar {
@@ -41,16 +44,7 @@ export interface Grammar {
 }
 
 export type TokenType =
-  | 'openBracket'
-  | 'closeBracket'
-  | 'openCurly'
-  | 'closeCurly'
-  | 'openParen'
-  | 'closeParen'
-  | 'colon'
-  | 'comma'
-  | 'question'
-  | 'pipe'
+  | SymbolType
   | 'binaryOp'
   | 'unaryOp'
   | 'identifier'
@@ -62,6 +56,8 @@ export interface Token {
   raw: string;
   // for literal token.
   literal?: string | number | boolean;
+  // for arguments identifier
+  argIndex?: number;
 }
 
 export type AstNode =
@@ -102,6 +98,7 @@ export interface LiteralNode extends AstNodeBase {
 export interface IdentifierNode extends AstNodeBase {
   type: 'Identifier';
   value: string;
+  argIndex?: number;
 }
 
 export interface BinaryNode extends AstNodeBase {
@@ -119,6 +116,7 @@ export interface UnaryNode extends AstNodeBase {
 
 export interface MemberNode extends AstNodeBase {
   type: 'Member';
+  computed?: boolean;
   left: AstNode;
   right: AstNode;
 }
@@ -142,8 +140,7 @@ export interface ConditionalNode extends AstNodeBase {
 
 export interface FunctionCallNode extends AstNodeBase {
   type: 'FunctionCall';
-  name?: string;
-  expr?: AstNode;
+  func: AstNode;
   args: AstNode[];
 }
 
@@ -157,6 +154,7 @@ export type StateType =
   | 'expectBinOp'
   | 'expectObjKey'
   | 'expectKeyValSep'
+  | 'computedMember'
   | 'member'
   | 'expectTransform'
   | 'postTransform'

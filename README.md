@@ -105,11 +105,12 @@ import Djel from 'djexl-js';
 | Logical AND                |     `&&`     |
 | Logical OR                 | &#124;&#124; |
 
-#### Concat Arrays use `+`
+#### Concat Arrays/Objects use `+`
 
 | Expression    | Result      |
 |---------------|-------------|
 | `[1,2]+[3,4]` | `[1,2,3,4]` |
+| `{x:1}+{y:2}` | `{x:1,y:2}` |
 
 ### Comparisons
 
@@ -238,7 +239,7 @@ Example context:
 |-------------------|----------------|
 | data&#124;(lower) | `"pam poovey"` |
 
-Note that you should add a pair of parentheses.
+Note that you should add a pair of parentheses if the function not in root context.
 
 ### Lambda
 

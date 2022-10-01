@@ -123,6 +123,10 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
     token.type = preferUnaryOp && grammar.unaryOps[element] ? 'unaryOp' : 'binaryOp';
   } else if (element.match(ID_REGEX)) {
     token.type = 'identifier';
+    const match = element.match(/^@(\d?)$/);
+    if (match) {
+      token.argIndex = +match[1] || 0;
+    }
   } else {
     throw new Error(`Invalid expression token: ${element}`);
   }

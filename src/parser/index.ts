@@ -10,6 +10,7 @@ import type {
   Grammar,
 } from '../types';
 import { states } from './states';
+import { MEMBER_PRIORITY } from '../grammar';
 
 /**
  * The Parser is a state machine that converts tokens into
@@ -187,7 +188,7 @@ export class Parser {
    * @param {number} priority target priority
    * @param {boolean} [rtl] the new operator associativity
    */
-  _priority(priority: number, rtl?: boolean) {
+  _rotatePriority(priority: number, rtl?: boolean) {
     let parent = this._cursor && this._cursor._parent;
     while (parent) {
       const parentPriority = this._getPriority(parent);
@@ -206,6 +207,9 @@ export class Parser {
     }
     if (ast.type === 'Unary') {
       return this._grammar.unaryOps[ast.operator].priority;
+    }
+    if (ast.type === 'Member') {
+      return MEMBER_PRIORITY;
     }
     /* istanbul ignore next */
     return 0;

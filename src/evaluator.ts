@@ -26,8 +26,9 @@ import type {
  *      accessed to resolve the value of each non-relative identifier. Any
  *      Promise values will be passed to the expression as their resolved
  *      value.
+ * @param [args] arguments for lambda
  */
-export function Evaluator(grammar: Grammar, context?: any) {
+export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
   const handlers = {
     /**
      * Evaluates a Literal by returning its value property.
@@ -40,7 +41,10 @@ export function Evaluator(grammar: Grammar, context?: any) {
      * constructed.
      * @param ast An expression tree with an Identifier as the top node
      */
-    Identifier: (ast: IdentifierNode) => context != null ? context[ast.value] : undefined,
+    Identifier: (ast: IdentifierNode) => {
+      if (args && ast.argIndex !== undefined) return args[ast.argIndex];
+      return context != null ? context[ast.value] : undefined;
+    },
     /**
      * Evaluates a Unary expression by passing the right side through the
      * operator's eval function.
@@ -67,7 +71,7 @@ export function Evaluator(grammar: Grammar, context?: any) {
      */
     Member: (ast: MemberNode) => {
       const left = evaluate(ast.left);
-      if (left == null) return undefined;
+      if (left == null) return;
       const key = evaluate(ast.right);
       if (Array.isArray(left) && key < 0) {
         return left[left.length + key];
@@ -112,9 +116,9 @@ export function Evaluator(grammar: Grammar, context?: any) {
      * @param ast An expression tree with a Transform as the top node
      */
     FunctionCall: (ast: FunctionCallNode) => {
-      const fn = ast.expr
-        ? evaluate(ast.expr)
-        : grammar.transforms[ast.name!];
+      const fn = ast.func.type === 'Identifier'
+        ? (grammar.transforms[ast.func.value] || evaluate(ast.func))
+        : evaluate(ast.func);
       if (typeof fn !== 'function') {
         throw new Error(`${fn} is not a function`);
       }
@@ -128,12 +132,7 @@ export function Evaluator(grammar: Grammar, context?: any) {
      */
     Lambda: (ast: LambdaNode) => {
       return (..._args: any[]) => {
-        const newContext = { ...context };
-        _args.forEach((arg, index) => {
-          newContext[`@${index}`] = arg;
-        });
-        newContext['@'] = _args[0];
-        const evaluator = Evaluator(grammar, newContext);
+        const evaluator = Evaluator(grammar, context, _args);
         return evaluator.evaluate(ast.expr);
       };
     },
