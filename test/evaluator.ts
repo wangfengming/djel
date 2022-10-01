@@ -222,6 +222,17 @@ describe('Evaluator', () => {
       expect(() => e.evaluate(toTree('foo?.().baz'))).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
+    it('optional chain (null)?.bar()', () => {
+      const context = {};
+      const e = Evaluator(grammar, context);
+      expect(e.evaluate(toTree('foo?.bar()'))).to.equal(undefined);
+    });
+    it('optional chain (...)?.bar()', () => {
+      const context = { foo: {} };
+      const e = Evaluator(grammar, context);
+      expect(() => e.evaluate(toTree('foo?.bar()'))).to
+        .throw('undefined is not a function');
+    });
   });
   describe('Object', () => {
     it('should evaluate an object literal', () => {
