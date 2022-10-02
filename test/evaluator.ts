@@ -15,7 +15,7 @@ describe('Evaluator', () => {
   function toTree(exp: string) {
     const p = new Parser(grammar);
     p.addTokens(tokenizer.tokenize(exp));
-    return p.complete();
+    return p.complete()!;
   }
 
   describe('Grammars', () => {
@@ -261,6 +261,24 @@ describe('Evaluator', () => {
       const context = { foo: {} };
       const e = Evaluator(grammar, context);
       expect(e.evaluate(toTree('[].baz'))).to.equal(undefined);
+    });
+  });
+  describe('Define variables', () => {
+    it('def variables', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('def a = 1; def b = 2; a + b'))).to.deep.equal(3);
+    });
+    it('def variables computed', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('def a = 1; def b = a + 1; def c = a + b; a + b + c'))).to.deep.equal(6);
+    });
+    it('def variables override', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('def a = 1; def a = a + 1; def b = 2; a + b'))).to.deep.equal(4);
+    });
+    it('def variables in sub-expression', () => {
+      const e = Evaluator(grammar, { x: true, a: 1, b: 2 });
+      expect(e.evaluate(toTree('(x ? (def a = 10; a) : b) + a'))).to.deep.equal(11);
     });
   });
   describe('Transform', () => {

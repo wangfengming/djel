@@ -5,6 +5,7 @@ import type {
   MemberNode,
   LambdaNode,
   OptionalBase,
+  Def,
   Token,
   TokenType,
   StateType,
@@ -27,12 +28,13 @@ export class Parser {
   _stopMap: Partial<Record<TokenType, StateType>>;
 
   _state: StateType;
+  _token?: Token;
   _tree?: AstNode;
   _cursor?: AstNode;
   _subParser?: Parser;
-  _curObjKey?: AstNode;
   _parentStop?: boolean;
   _lambda?: boolean;
+  _defs: Def[] = [];
 
   /**
    * @param grammar
@@ -70,6 +72,7 @@ export class Parser {
     }
     const state = states[this._state];
     const startExpr = this._exprStr;
+    this._token = token;
     this._exprStr += token.raw;
     if (state.subHandler) {
       if (!this._subParser) this._startSubExp(startExpr);
@@ -86,9 +89,7 @@ export class Parser {
     } else if (this._stopMap[token.type]) {
       return this._stopMap[token.type];
     } else {
-      throw new Error(
-        `Token ${token.raw} unexpected in expression: ${this._exprStr}`,
-      );
+      this._assert(false);
     }
   }
 
@@ -107,7 +108,7 @@ export class Parser {
    * @throws {Error} if the parser is not in a state where it's legal to end
    *      the expression, indicating that the expression is incomplete
    */
-  complete() {
+  complete(): AstNode | undefined {
     if (this._cursor && !states[this._state].completable) {
       throw new Error(`Unexpected end of expression: ${this._exprStr}`);
     }
@@ -116,7 +117,9 @@ export class Parser {
     if (this._lambda) {
       Object.defineProperty(this._tree, '_lambda', { value: true, writable: true });
     }
-    return this._tree!;
+    return this._tree && this._defs.length
+      ? { type: 'Def', defs: this._defs, statement: this._tree }
+      : this._tree;
   }
 
   /**
@@ -229,5 +232,13 @@ export class Parser {
   _leftOptional(ast: OptionalBase) {
     const left = this._cursor as OptionalBase;
     if (left.optional || left.leftOptional) ast.leftOptional = true;
+  }
+
+  _assert(condition: unknown): asserts condition {
+    if (!condition) {
+      throw new Error(
+        `Token ${this._token?.raw} unexpected in expression: ${this._exprStr}`,
+      );
+    }
   }
 }

@@ -10,7 +10,8 @@ describe('tokenizer', () => {
   });
 
   it('symbol', () => {
-    expect(tokenizer.tokenize('[]{}:,()? . ?. ?.[ ?.(')).to.deep.equal([
+    expect(tokenizer.tokenize(';[]{}:,()? . ?. ?.[ ?.(def=')).to.deep.equal([
+      { type: 'semi', value: ';', raw: ';' },
       { type: 'openBracket', value: '[', raw: '[' },
       { type: 'closeBracket', value: ']', raw: ']' },
       { type: 'openCurly', value: '{', raw: '{' },
@@ -24,6 +25,8 @@ describe('tokenizer', () => {
       { type: 'optionalDot', value: '?.', raw: '?. ' },
       { type: 'optionalBracket', value: '?.[', raw: '?.[ ' },
       { type: 'optionalParen', value: '?.(', raw: '?.(' },
+      { type: 'def', value: 'def', raw: 'def' },
+      { type: 'assign', value: '=', raw: '=' },
     ]);
   });
   it('binaryOp', () => {
@@ -65,6 +68,30 @@ describe('tokenizer', () => {
       { type: 'colon', value: ':', raw: ':' },
       { type: 'unaryOp', value: '!', raw: '!' },
       { type: 'literal', value: '3', raw: '3', literal: 3 },
+    ]);
+  });
+  it('prefer unaryOp', () => {
+    expect(tokenizer.tokenize('- [ - ( - * - ( + - ? - : - , - = - ; -')).to.deep.equal([
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'openBracket', value: '[', raw: '[ ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'openParen', value: '(', raw: '( ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'binaryOp', value: '*', raw: '* ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'openParen', value: '(', raw: '( ' },
+      { type: 'unaryOp', value: '+', raw: '+ ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'question', value: '?', raw: '? ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'colon', value: ':', raw: ': ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'comma', value: ',', raw: ', ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'assign', value: '=', raw: '= ' },
+      { type: 'unaryOp', value: '-', raw: '- ' },
+      { type: 'semi', value: ';', raw: '; ' },
+      { type: 'unaryOp', value: '-', raw: '-' },
     ]);
   });
   it('string', () => {
@@ -185,6 +212,15 @@ describe('tokenizer', () => {
         raw: '"not a #comment" ',
         literal: 'not a #comment',
       },
+    ]);
+  });
+  it('ignore the end semi', () => {
+    const tokens = tokenizer.tokenize('def a = 1;');
+    expect(tokens).to.deep.equal([
+      { type: 'def', value: 'def', raw: 'def ' },
+      { type: 'identifier', value: 'a', raw: 'a ' },
+      { type: 'assign', value: '=', raw: '= ' },
+      { type: 'literal', value: '1', raw: '1', literal: 1 },
     ]);
   });
   it('throw for invalid token', () => {

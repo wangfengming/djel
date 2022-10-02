@@ -39,6 +39,9 @@ export const getGrammar = (): Grammar => ({
     '?.(': { type: 'optionalParen' },
     ')': { type: 'closeParen' },
     '?': { type: 'question' },
+    'def': { type: 'def' },
+    '=': { type: 'assign' },
+    ';': { type: 'semi' },
   },
   binaryOps: {
     '+': {

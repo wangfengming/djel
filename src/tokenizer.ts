@@ -50,6 +50,9 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
     }
     const elements = str.split(_regexp).filter((i) => i);
     const tokens = getTokens(elements, _grammar);
+    if (tokens.length && tokens[tokens.length - 1].type === 'semi') {
+      tokens.pop();
+    }
     return tokens;
   };
 
@@ -151,6 +154,8 @@ function isPreferUnaryOp(tokens: Token[]) {
     'question',
     'colon',
     'comma',
+    'assign',
+    'semi',
   ].some((type) => type === lastTokenType);
 }
 

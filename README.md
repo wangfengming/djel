@@ -208,6 +208,17 @@ Example context:
 
 You can use a negative number to index an array in the end side.
 
+### Define local variables
+
+You can use `def` keyword to define local variables. The `def` in sub-expression has a local scope. And `def` can
+override the `Context` variables in its local scope.
+
+| Expression                                                        | Result |
+|-------------------------------------------------------------------|--------|
+| `def a = 1; def b = a + 1; a + b`                                 | 3      |
+| `def a = 1; (true ? (def a = 10; a) : 0) + a`                     | 11     |
+| with context: `{ a: 1 }` <br/> `(true ? (def a = 10; a) : 0) + a` | 11     |
+
 ### Transform
 
 The power of `Djel` is in transforming data.

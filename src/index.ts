@@ -33,7 +33,8 @@ export default function Djel() {
      *  which will be made accessible to the expression when evaluating it
      * @returns The result of the evaluation.
      */
-    const evaluate = (context?: any): T => {
+    const evaluate = (context?: any): T | undefined => {
+      if (!ast) return undefined;
       const evaluator = Evaluator(_grammar, context);
       return evaluator.evaluate(ast);
     };

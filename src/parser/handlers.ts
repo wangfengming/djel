@@ -9,6 +9,8 @@ import type {
   ObjectNode,
   ConditionalNode,
   FunctionCallNode,
+  ObjectEntry,
+  Def,
   Token,
 } from '../types';
 import { FUNCTION_CALL_PRIORITY, MEMBER_PRIORITY, PIPE_PRIORITY } from '../grammar';
@@ -84,6 +86,9 @@ export const handlers = {
     this._leftOptional(node);
     this._placeBeforeCursor(node);
   },
+  defName(this: Parser, token: Token) {
+    this._defs.push({ name: token.value } as Def);
+  },
   /**
    * Handles new array literals by adding them as a new node in the AST,
    * initialized with an empty array.
@@ -103,10 +108,9 @@ export const handlers = {
    * @param token A token object
    */
   objKey(this: Parser, token: Token) {
-    this._curObjKey = {
-      type: 'Literal',
-      value: token.value,
-    };
+    (this._cursor as ObjectNode).entries.push({
+      key: { type: 'Literal', value: token.value },
+    } as ObjectEntry);
   },
   /**
    * Handles the start of a new ternary expression by encapsulating the entire
@@ -162,40 +166,46 @@ export const subHandlers = {
   arrayVal(this: Parser, ast?: AstNode) {
     if (ast) (this._cursor as ArrayNode).value.push(ast);
   },
-  objKey(this: Parser, ast: AstNode) {
-    this._curObjKey = ast;
+  objKey(this: Parser, ast?: AstNode) {
+    this._assert(ast);
+    (this._cursor as ObjectNode).entries.push({ key: ast } as ObjectEntry);
   },
   /**
    * Handles an object value by adding its AST to the queued key on the object
    * literal node currently at the cursor.
    * @param ast The subexpression tree
    */
-  objVal(this: Parser, ast: AstNode) {
-    (this._cursor as ObjectNode).entries.push({
-      key: this._curObjKey!,
-      value: ast,
-    });
+  objVal(this: Parser, ast?: AstNode) {
+    this._assert(ast);
+    const entries = (this._cursor as ObjectNode).entries;
+    entries[entries.length - 1].value = ast;
   },
   /**
    * Handles a completed consequent subexpression of a ternary operator.
    * @param ast The subexpression tree
    */
-  ternaryMid(this: Parser, ast: AstNode) {
+  ternaryMid(this: Parser, ast?: AstNode) {
     (this._cursor as ConditionalNode).consequent = ast;
   },
   /**
    * Handles a completed alternate subexpression of a ternary operator.
    * @param ast The subexpression tree
    */
-  ternaryEnd(this: Parser, ast: AstNode) {
+  ternaryEnd(this: Parser, ast?: AstNode) {
+    this._assert(ast);
     (this._cursor as ConditionalNode).alternate = ast;
+  },
+  defVal(this: Parser, ast?: AstNode) {
+    this._assert(ast);
+    this._defs[this._defs.length - 1].value = ast;
   },
   /**
    * Handles a completed subexpression of a transform to be called.
    * This can be a function in context or can be a Lambda expression.
    * @param ast The subexpression tree
    */
-  exprTransform(this: Parser, ast: AstNode) {
+  exprTransform(this: Parser, ast?: AstNode) {
+    this._assert(ast);
     this._lambda = false;
     (this._cursor as FunctionCallNode).func = this._maybeLambda(ast);
   },
@@ -212,14 +222,16 @@ export const subHandlers = {
    * groupEnd elements.
    * @param ast The subexpression tree
    */
-  subExp(this: Parser, ast: AstNode) {
+  subExp(this: Parser, ast?: AstNode) {
+    this._assert(ast);
     this._placeAtCursor(ast);
   },
   /**
    * Handles a subexpression used for member access an object.
    * @param ast The subexpression tree
    */
-  computedMemberProperty(this: Parser, ast: AstNode) {
+  computedMemberProperty(this: Parser, ast?: AstNode) {
+    this._assert(ast);
     (this._cursor as MemberNode).right = ast;
   },
 };

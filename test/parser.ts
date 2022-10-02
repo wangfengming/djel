@@ -480,9 +480,13 @@ describe('Parser', () => {
       expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to
         .throw('Cannot add a new token to a completed Parser');
     });
+    it('should throw if add invalid token', () => {
+      expect(() => parser.addTokens(tokenizer.tokenize('a.b ~+= c.d'))).to
+        .throw('Invalid expression token: ~');
+    });
     it('should throw if add unexpected token', () => {
       expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to
-        .throw('Invalid expression token: =');
+        .throw('Token = unexpected in expression: a.b =');
     });
     it('should throw if token is not complete', () => {
       parser.addTokens(tokenizer.tokenize('a.b == c.d +'));
@@ -594,6 +598,106 @@ describe('Parser', () => {
       expect(parser.complete()).to.deep.equal({
         type: 'Array',
         value: [],
+      });
+    });
+  });
+  describe('Define variables', () => {
+    it('def variables', () => {
+      parser.addTokens(tokenizer.tokenize('def a = 1; def b = 2; a + b'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'Def',
+        defs: [
+          { name: 'a', value: { type: 'Literal', value: 1 } },
+          { name: 'b', value: { type: 'Literal', value: 2 } },
+        ],
+        statement: {
+          type: 'Binary',
+          operator: '+',
+          left: { type: 'Identifier', value: 'a' },
+          right: { type: 'Identifier', value: 'b' },
+        },
+      });
+    });
+    it('def variables computed', () => {
+      parser.addTokens(tokenizer.tokenize('def a = 1; def b = a + 1; def c = a + b; a + b + c'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'Def',
+        defs: [
+          { name: 'a', value: { type: 'Literal', value: 1 } },
+          {
+            name: 'b',
+            value: {
+              type: 'Binary',
+              operator: '+',
+              left: { type: 'Identifier', value: 'a' },
+              right: { type: 'Literal', value: 1 },
+            },
+          },
+          {
+            name: 'c',
+            value: {
+              type: 'Binary',
+              operator: '+',
+              left: { type: 'Identifier', value: 'a' },
+              right: { type: 'Identifier', value: 'b' },
+            },
+          },
+        ],
+        statement: {
+          type: 'Binary',
+          operator: '+',
+          left: {
+            type: 'Binary',
+            operator: '+',
+            left: { type: 'Identifier', value: 'a' },
+            right: { type: 'Identifier', value: 'b' },
+          },
+          right: { type: 'Identifier', value: 'c' },
+        },
+      });
+    });
+    it('def variables in sub-expression', () => {
+      parser.addTokens(tokenizer.tokenize('x ? (def a = 1; def b = 2; a + b) : y'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'Conditional',
+        test: { type: 'Identifier', value: 'x' },
+        consequent: {
+          type: 'Def',
+          defs: [
+            { name: 'a', value: { type: 'Literal', value: 1 } },
+            { name: 'b', value: { type: 'Literal', value: 2 } },
+          ],
+          statement: {
+            type: 'Binary',
+            operator: '+',
+            left: { type: 'Identifier', value: 'a' },
+            right: { type: 'Identifier', value: 'b' },
+          },
+        },
+        alternate: { type: 'Identifier', value: 'y' },
+      });
+    });
+    it('def variables without return will be ignored', () => {
+      parser.addTokens(tokenizer.tokenize('def a = 1;'));
+      expect(parser.complete()).to.equal(undefined);
+    });
+    it('ignore then end semi in def variables', () => {
+      parser.addTokens(tokenizer.tokenize('def a = 1'));
+      expect(parser.complete()).to.equal(undefined);
+    });
+    it('ignore then end semi in return', () => {
+      parser.addTokens(tokenizer.tokenize('def a = 1; a + 1;'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'Def',
+        defs: [
+          { name: 'a', value: { type: 'Literal', value: 1 } },
+        ],
+        statement: {
+          type: 'Binary',
+          operator: '+',
+          left: { type: 'Identifier', value: 'a' },
+          right: { type: 'Literal', value: 1 },
+        },
       });
     });
   });

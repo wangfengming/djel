@@ -51,6 +51,7 @@ export const states: Record<StateType, State> = {
       openParen: { toState: 'subExp' },
       openCurly: { toState: 'expectObjKey', handler: handlers.objStart },
       openBracket: { toState: 'arrayVal', handler: handlers.arrayStart },
+      def: { toState: 'def' },
     },
   },
   expectBinOp: {
@@ -75,6 +76,16 @@ export const states: Record<StateType, State> = {
       colon: { toState: 'objVal' },
     },
   },
+  def: {
+    tokenTypes: {
+      identifier: { toState: 'defAssign', handler: handlers.defName },
+    },
+  },
+  defAssign: {
+    tokenTypes: {
+      assign: { toState: 'defVal' },
+    },
+  },
   expectTransform: {
     tokenTypes: {
       identifier: { toState: 'postTransform', handler: handlers.transform },
@@ -88,19 +99,6 @@ export const states: Record<StateType, State> = {
       optionalParen: undefined,
     },
     completable: true,
-  },
-  exprTransform: {
-    subHandler: subHandlers.exprTransform,
-    endStates: {
-      closeParen: 'postTransform',
-    },
-  },
-  argVal: {
-    subHandler: subHandlers.argVal,
-    endStates: {
-      comma: 'argVal',
-      closeParen: 'expectBinOp',
-    },
   },
   computedMember: {
     subHandler: subHandlers.computedMemberProperty,
@@ -134,6 +132,25 @@ export const states: Record<StateType, State> = {
       closeBracket: 'expectBinOp',
     },
   },
+  defVal: {
+    subHandler: subHandlers.defVal,
+    endStates: {
+      semi: 'expectOperand',
+    },
+  },
+  exprTransform: {
+    subHandler: subHandlers.exprTransform,
+    endStates: {
+      closeParen: 'postTransform',
+    },
+  },
+  argVal: {
+    subHandler: subHandlers.argVal,
+    endStates: {
+      comma: 'argVal',
+      closeParen: 'expectBinOp',
+    },
+  },
   ternaryMid: {
     subHandler: subHandlers.ternaryMid,
     endStates: {
@@ -144,5 +161,7 @@ export const states: Record<StateType, State> = {
     subHandler: subHandlers.ternaryEnd,
     completable: true,
   },
-  complete: {},
+  complete: {
+    completable: true,
+  },
 };

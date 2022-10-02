@@ -10,6 +10,9 @@ describe('Djel', () => {
   it('should evaluate', () => {
     expect(djel.evaluate('2+2')).to.equal(4);
   });
+  it('should return undefined for empty string', () => {
+    expect(djel.evaluate('')).to.equal(undefined);
+  });
   it('should throw', () => {
     expect(() => djel.evaluate('2**2')).to.throw('Token * unexpected in expression: 2**');
   });

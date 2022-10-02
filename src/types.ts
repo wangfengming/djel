@@ -14,7 +14,10 @@ export type SymbolType =
   | 'colon'
   | 'comma'
   | 'question'
-  | 'pipe';
+  | 'pipe'
+  | 'def'
+  | 'assign'
+  | 'semi';
 
 export interface SymbolGrammar {
   type: SymbolType;
@@ -73,7 +76,8 @@ export type AstNode =
   | ObjectNode
   | ConditionalNode
   | FunctionCallNode
-  | LambdaNode;
+  | LambdaNode
+  | DefNode;
 
 interface AstNodeBase {
   type: AstNodeType;
@@ -92,6 +96,7 @@ export type AstNodeType =
   | 'Conditional'
   | 'FunctionCall'
   | 'Lambda'
+  | 'Def'
 
 export interface LiteralNode extends AstNodeBase {
   type: 'Literal';
@@ -131,7 +136,12 @@ export interface MemberNode extends AstNodeBase, OptionalBase {
 
 export interface ObjectNode extends AstNodeBase {
   type: 'Object';
-  entries: { key: AstNode; value: AstNode }[];
+  entries: ObjectEntry[];
+}
+
+export interface ObjectEntry {
+  key: AstNode;
+  value: AstNode;
 }
 
 export interface ArrayNode extends AstNodeBase {
@@ -157,6 +167,17 @@ export interface LambdaNode extends AstNodeBase {
   expr: AstNode;
 }
 
+export interface DefNode extends AstNodeBase {
+  type: 'Def',
+  defs: Def[];
+  statement: AstNode;
+}
+
+export interface Def {
+  name: string;
+  value: AstNode;
+}
+
 export type StateType =
   | 'expectOperand'
   | 'expectBinOp'
@@ -164,6 +185,9 @@ export type StateType =
   | 'expectKeyValSep'
   | 'computedMember'
   | 'member'
+  | 'def'
+  | 'defAssign'
+  | 'defVal'
   | 'expectTransform'
   | 'postTransform'
   | 'exprTransform'
@@ -179,7 +203,7 @@ export type StateType =
 export interface State {
   tokenTypes?: Partial<Record<TokenType, StateTypeOpts>>;
   completable?: boolean;
-  subHandler?: (this: Parser, ast: AstNode) => void;
+  subHandler?: (this: Parser, ast?: AstNode) => void;
   endStates?: Partial<Record<TokenType, StateType>>;
 }
 

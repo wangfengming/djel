@@ -8,6 +8,7 @@ import type {
   ArrayNode,
   ObjectNode,
   ConditionalNode,
+  DefNode,
   FunctionCallNode,
   LambdaNode,
   Grammar,
@@ -30,7 +31,7 @@ import type {
  */
 const NullSignal = {};
 
-export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
+export function Evaluator(grammar: Grammar, context?: any, locals: Record<string, any> = {}, args?: any[]) {
   const handlers = {
     /**
      * Evaluates a Literal by returning its value property.
@@ -45,6 +46,7 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
      */
     Identifier: (ast: IdentifierNode) => {
       if (args && ast.argIndex !== undefined) return args[ast.argIndex];
+      if (hasOwn(locals, ast.value)) return locals[ast.value];
       if (context == null) {
         throw new Error(`No context provided for evaluate`);
       }
@@ -147,21 +149,33 @@ export function Evaluator(grammar: Grammar, context?: any, args?: any[]) {
      */
     Lambda: (ast: LambdaNode) => {
       return (..._args: any[]) => {
-        const evaluator = Evaluator(grammar, context, _args);
+        const evaluator = Evaluator(grammar, context, locals, _args);
         return evaluator.evaluate(ast.expr);
       };
+    },
+    Def: (ast: DefNode) => {
+      const oldLocals = locals;
+      locals = { ...locals };
+      ast.defs.forEach((def) => {
+        locals[def.name] = evaluate(def.value);
+      });
+      const result = evaluate(ast.statement);
+      locals = oldLocals;
+      return result;
     },
   };
 
   /**
    * Evaluates an expression tree within the configured context.
    * @param ast An expression tree object
-   * @param nullSignal optional chain null signal
+   * @param [nullSignal] optional chain null signal
    * @returns the resulting value of the expression.
    */
-  const evaluate = <T = any>(ast: AstNode, nullSignal?: boolean): T => {
+  const evaluate = <T = any>(ast: AstNode, nullSignal?: boolean): T | undefined => {
     return handlers[ast.type](ast as any, nullSignal);
   };
 
   return { evaluate };
 }
+
+const hasOwn = (o: any, key: string) => Object.prototype.hasOwnProperty.call(o, key);
