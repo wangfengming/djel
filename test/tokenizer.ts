@@ -141,6 +141,16 @@ describe('tokenizer', () => {
       },
     ]);
   });
+  it('null', () => {
+    expect(tokenizer.tokenize('null')).to.deep.equal([
+      {
+        type: 'literal',
+        value: 'null',
+        raw: 'null',
+        literal: null,
+      },
+    ]);
+  });
   it('identifier', () => {
     expect(tokenizer.tokenize('_foo9_bar')).to.deep.equal([
       {

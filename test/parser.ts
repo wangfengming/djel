@@ -26,6 +26,10 @@ describe('Parser', () => {
       parser.addTokens(tokenizer.tokenize('10'));
       expect(parser.complete()).to.deep.equal({ type: 'Literal', value: 10 });
     });
+    it('literal null', () => {
+      parser.addTokens(tokenizer.tokenize('null'));
+      expect(parser.complete()).to.deep.equal({ type: 'Literal', value: null });
+    });
   });
   describe('Identifier', () => {
     it('identifier', () => {
@@ -772,6 +776,87 @@ describe('Parser', () => {
     });
     it('should apply context function as transform', () => {
       const tokens = tokenizer.tokenize('arr|(test)');
+      parser.addTokens(tokens);
+      expect(parser.complete()).to.deep.equal({
+        type: 'FunctionCall',
+        func: { type: 'Identifier', value: 'test' },
+        args: [
+          { type: 'Identifier', value: 'arr' },
+        ],
+      });
+    });
+  });
+  describe('Function Call', () => {
+    it('should apply transforms', () => {
+      const tokens = tokenizer.tokenize('tr(foo.baz)+1');
+      parser.addTokens(tokens);
+      const ast = parser.complete();
+      expect(ast).to.deep.equal({
+        type: 'Binary',
+        operator: '+',
+        left: {
+          type: 'FunctionCall',
+          func: { type: 'Identifier', value: 'tr' },
+          args: [
+            {
+              type: 'Member',
+              left: { type: 'Identifier', value: 'foo' },
+              right: { type: 'Literal', value: 'baz' },
+            },
+          ],
+        },
+        right: { type: 'Literal', value: 1 },
+      });
+    });
+    it('should apply transforms with argument', () => {
+      parser.addTokens(tokenizer.tokenize('tr3(tr2(tr1(foo)).baz,{bar:"tek"})'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'FunctionCall',
+        func: { type: 'Identifier', value: 'tr3' },
+        args: [
+          {
+            type: 'Member',
+            left: {
+              type: 'FunctionCall',
+              func: { type: 'Identifier', value: 'tr2' },
+              args: [{
+                type: 'FunctionCall',
+                func: { type: 'Identifier', value: 'tr1' },
+                args: [{
+                  type: 'Identifier',
+                  value: 'foo',
+                }],
+              }],
+            },
+            right: { type: 'Literal', value: 'baz' },
+          },
+          {
+            type: 'Object',
+            entries: [
+              {
+                key: { type: 'Literal', value: 'bar' },
+                value: { type: 'Literal', value: 'tek' },
+              },
+            ],
+          },
+        ],
+      });
+    });
+    it('should handle multiple arguments in transforms', () => {
+      parser.addTokens(tokenizer.tokenize('bar(foo, "tek", 5, true)'));
+      expect(parser.complete()).to.deep.equal({
+        type: 'FunctionCall',
+        func: { type: 'Identifier', value: 'bar' },
+        args: [
+          { type: 'Identifier', value: 'foo' },
+          { type: 'Literal', value: 'tek' },
+          { type: 'Literal', value: 5 },
+          { type: 'Literal', value: true },
+        ],
+      });
+    });
+    it('should apply context function as transform', () => {
+      const tokens = tokenizer.tokenize('test(arr)');
       parser.addTokens(tokens);
       expect(parser.complete()).to.deep.equal({
         type: 'FunctionCall',

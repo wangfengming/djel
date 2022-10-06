@@ -61,7 +61,7 @@ export interface Token {
   value: string;
   raw: string;
   // for literal token.
-  literal?: string | number | boolean;
+  literal?: string | number | boolean | null;
   // for arguments identifier
   argIndex?: number;
 }

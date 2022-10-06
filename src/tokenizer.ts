@@ -87,9 +87,8 @@ function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
   elements.forEach((element) => {
     if (/^\s*$/.test(element)) { // is whitespace
       if (tokens.length) tokens[tokens.length - 1].raw += element;
-    } else if (element.startsWith('#')) { // is comment
-      return;
-    } else {
+    } else if (!element.startsWith('#')) {
+      // # is comment
       const token = createToken(element, grammar, isPreferUnaryOp(tokens));
       tokens.push(token);
     }
@@ -116,14 +115,22 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
 
   if (element[0] == '"' || element[0] == '\'') {
     token.literal = unquote(element);
-  } else if (element.match(/^-?(?:(\d*\.\d+)|\d+)$/)) {
+  } else if (element.match(/^(?:(\d*\.\d+)|\d+)$/)) {
     token.literal = parseFloat(element);
-  } else if (element === 'true' || element === 'false') {
-    token.literal = element === 'true';
+  } else if (element === 'true') {
+    token.literal = true;
+  } else if (element === 'false') {
+    token.literal = false;
+  } else if (element === 'null') {
+    token.literal = null;
   } else if (grammar.symbols[element]) {
     token.type = grammar.symbols[element].type;
-  } else if (grammar.binaryOps[element] || grammar.unaryOps[element]) {
-    token.type = preferUnaryOp && grammar.unaryOps[element] ? 'unaryOp' : 'binaryOp';
+  } else if (grammar.binaryOps[element] && grammar.unaryOps[element]) {
+    token.type = preferUnaryOp ? 'unaryOp' : 'binaryOp';
+  } else if (grammar.binaryOps[element]) {
+    token.type = 'binaryOp';
+  } else if (grammar.unaryOps[element]) {
+    token.type = 'unaryOp';
   } else if (element.match(ID_REGEX)) {
     token.type = 'identifier';
     const match = element.match(/^@(\d?)$/);
@@ -145,18 +152,16 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
  */
 function isPreferUnaryOp(tokens: Token[]) {
   if (!tokens.length) return true;
-  const lastTokenType = tokens[tokens.length - 1].type;
-  return [
-    'openBracket',
-    'openParen',
-    'binaryOp',
-    'unaryOp',
-    'question',
-    'colon',
-    'comma',
-    'assign',
-    'semi',
-  ].some((type) => type === lastTokenType);
+  const lastType = tokens[tokens.length - 1].type;
+  return 'openBracket' == lastType
+    || 'openParen' == lastType
+    || 'binaryOp' == lastType
+    || 'unaryOp' == lastType
+    || 'question' == lastType
+    || 'colon' == lastType
+    || 'comma' == lastType
+    || 'assign' == lastType
+    || 'semi' == lastType;
 }
 
 /**
@@ -193,6 +198,8 @@ function createRegexp(tokenNames: string[]) {
     // Booleans
     /\btrue\b/.source,
     /\bfalse\b/.source,
+    // Null
+    /\bnull\b/.source,
     // comments
     /#.*\n?/.source,
   ];
@@ -208,7 +215,7 @@ function createRegexp(tokenNames: string[]) {
     .map((item) => escapeRegExp(item));
 
   const regexp = new RegExp(
-    `(${preOpRegexElems.join('|')}|${_tokenNames.join('|')}|${postOpRegexElems.join('|')})`,
+    `(${preOpRegexElems.concat(_tokenNames).concat(postOpRegexElems).join('|')})`,
   );
 
   return regexp;

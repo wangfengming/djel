@@ -109,7 +109,7 @@ export const handlers = {
    */
   objKey(this: Parser, token: Token) {
     (this._cursor as ObjectNode).entries.push({
-      key: { type: 'Literal', value: token.value },
+      key: { type: 'Literal', value: token.type === 'literal' ? `${token.literal}` : token.value },
     } as ObjectEntry);
   },
   /**
@@ -197,7 +197,7 @@ export const subHandlers = {
   },
   defVal(this: Parser, ast?: AstNode) {
     this._assert(ast);
-    this._defs[this._defs.length - 1].value = ast;
+    this._defs[this._defs.length - 1].value = this._maybeLambda(ast);
   },
   /**
    * Handles a completed subexpression of a transform to be called.

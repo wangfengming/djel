@@ -67,6 +67,7 @@ export const states: Record<StateType, State> = {
   expectObjKey: {
     tokenTypes: {
       identifier: { toState: 'expectKeyValSep', handler: handlers.objKey },
+      literal: { toState: 'expectKeyValSep', handler: handlers.objKey },
       openBracket: { toState: 'objKey' },
       closeCurly: { toState: 'expectBinOp' },
     },

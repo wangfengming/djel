@@ -70,6 +70,28 @@ describe('Evaluator', () => {
       expect(e.evaluate(toTree('true||false'))).to.equal(true);
     });
   });
+  describe('Literal', () => {
+    it('number', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('10'))).to.equal(10);
+      expect(e.evaluate(toTree('10.1'))).to.equal(10.1);
+      expect(e.evaluate(toTree('-10'))).to.equal(-10);
+    });
+    it('string', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('"Hello"'))).to.equal('Hello');
+      expect(e.evaluate(toTree('"Hello\\""'))).to.equal('Hello"');
+    });
+    it('boolean', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('true'))).to.equal(true);
+      expect(e.evaluate(toTree('false'))).to.equal(false);
+    });
+    it('null', () => {
+      const e = Evaluator(grammar);
+      expect(e.evaluate(toTree('null'))).to.equal(null);
+    });
+  });
   describe('Unary Expression', () => {
     it('should convert string to number by +', () => {
       const context = { x: { y: '1' } };
@@ -237,7 +259,7 @@ describe('Evaluator', () => {
   describe('Object', () => {
     it('should evaluate an object literal', () => {
       const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('{foo: {bar: "tek"}}'))).to.deep.equal({ foo: { bar: 'tek' } });
+      expect(e.evaluate(toTree('{foo: {"bar": "tek"}}'))).to.deep.equal({ foo: { bar: 'tek' } });
     });
     it('should evaluate an empty object literal', () => {
       const e = Evaluator(grammar);
@@ -366,9 +388,9 @@ describe('Evaluator', () => {
       const tree = toTree('(foo+3+5)|({x:@/2,y:@/2+3})');
       expect(e.evaluate(tree)).to.deep.equal({ x: 9, y: 12 });
     });
-    it('should apply lambda transforms with args', () => {
+    it('should define lambda with args', () => {
       const e = Evaluator(grammar);
-      const tree = toTree('(1+2+3)|(@>@1)(4+5+6)?"great":"small"');
+      const tree = toTree('def isLarge = @>@1;isLarge(1+2+3,4+5+6)?"great":"small"');
       expect(e.evaluate(tree)).to.equal('small');
     });
   });
