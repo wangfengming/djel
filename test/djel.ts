@@ -16,7 +16,7 @@ describe('Djel', () => {
   it('should throw', () => {
     expect(() => djel.evaluate('2**2')).to.throw('Token * unexpected in expression: 2**');
   });
-  it('should pass context', () => {
+  it('should pass variables', () => {
     expect(djel.evaluate('foo', { foo: 'bar' })).to.equal('bar');
   });
   it('should allow transforms to be defined', () => {
@@ -28,7 +28,7 @@ describe('Djel', () => {
     expect(djel.evaluate('"hello"|toCase({case:"upper"})')).to.equal('HELLO');
   });
   it('should allow transforms to be set in batch', () => {
-    const context = {
+    const variables = {
       users: [
         { age: 18, name: 'Nikolai Jakov' },
         { age: 17, name: 'Len Trexler' },
@@ -47,10 +47,10 @@ describe('Djel', () => {
       values: (obj: any) => Object.values(obj),
       reduce: (arr: any[], by: (acc: any, value: any) => any, initial: any) => arr.reduce(by, initial),
     });
-    expect(djel.evaluate('users|filter(@.age<18)', context)).to.deep.equal([{ age: 17, name: 'Len Trexler' }]);
-    expect(djel.evaluate('users|map(@.age)', context)).to.deep.equal([18, 17, 19]);
-    expect(djel.evaluate('users|sum(@.age)/users.length', context)).to.equal(18);
-    expect(djel.evaluate('data|values|reduce(@+@1,{})', context)).to.deep.equal({ x: 1, y: 2, z: 3 });
+    expect(djel.evaluate('users|filter(@.age<18)', variables)).to.deep.equal([{ age: 17, name: 'Len Trexler' }]);
+    expect(djel.evaluate('users|map(@.age)', variables)).to.deep.equal([18, 17, 19]);
+    expect(djel.evaluate('users|sum(@.age)/users.length', variables)).to.equal(18);
+    expect(djel.evaluate('data|values|reduce(@+@1,{})', variables)).to.deep.equal({ x: 1, y: 2, z: 3 });
   });
   it('should allow transforms to be removed', () => {
     djel.addTransforms({
@@ -58,7 +58,7 @@ describe('Djel', () => {
     });
     expect(djel.evaluate('2|add1')).to.equal(3);
     djel.removeTransform('add1');
-    expect(() => djel.evaluate('2|add1')).to.throw('No context provided for evaluate');
+    expect(() => djel.evaluate('2|add1')).to.throw('No variables provided for evaluate');
   });
   it('should allow binaryOps to be defined', () => {
     djel.addBinaryOps({

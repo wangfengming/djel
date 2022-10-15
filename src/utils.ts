@@ -14,3 +14,7 @@ export function set(obj: any, key: string, v: any) {
 export function last<T>(a: T[]) {
   return a[a.length - 1];
 }
+
+export function hasOwn(o: any, key: string) {
+  return Object.prototype.hasOwnProperty.call(o, key);
+}

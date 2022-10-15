@@ -2,7 +2,7 @@ import type { BinaryOpGrammar, DelayBinaryOpGrammar, UnaryOpGrammar } from './ty
 import { getGrammar } from './grammar';
 import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
-import { Evaluator } from './evaluator';
+import { evaluate as _evaluate } from './evaluator';
 
 export type { BinaryOpGrammar, DelayBinaryOpGrammar, UnaryOpGrammar } from './types';
 
@@ -29,14 +29,13 @@ export default function Djel() {
     const ast = parser.complete();
     /**
      * Evaluates the expression within an optional context.
-     * @param {Object} [context] A mapping of variables to values,
+     * @param {Object} [variables] A mapping of variables to values,
      *  which will be made accessible to the expression when evaluating it
      * @returns The result of the evaluation.
      */
-    const evaluate = (context?: any): T | undefined => {
+    const evaluate = (variables?: any): T | undefined => {
       if (!ast) return undefined;
-      const evaluator = Evaluator(_grammar, context);
-      return evaluator.evaluate(ast);
+      return _evaluate(ast, { grammar: _grammar, variables });
     };
     return { evaluate };
   };

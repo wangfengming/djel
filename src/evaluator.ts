@@ -4,8 +4,8 @@ import type {
   BinaryNode,
   ConditionalNode,
   DefNode,
+  EvaluateContext,
   FunctionCallNode,
-  Grammar,
   IdentifierNode,
   LambdaNode,
   LiteralNode,
@@ -14,169 +14,135 @@ import type {
   UnaryNode,
 } from './types';
 import { AstNodeType } from './types';
+import { hasOwn } from './utils';
+
+const handlers = {
+  /**
+   * Evaluates a Literal by returning its value property.
+   */
+  [AstNodeType.Literal]: (ast: LiteralNode) => ast.value,
+  /**
+   * Evaluates an Identifier by either stemming from the `args` by a lambda
+   * or the `locals` by define local variables or the `variables`.
+   */
+  [AstNodeType.Identifier]: (ast: IdentifierNode, context: EvaluateContext) => {
+    if (context.args && ast.argIndex !== undefined) return context.args[ast.argIndex];
+    if (context.locals && hasOwn(context.locals, ast.value)) return context.locals[ast.value];
+    if (context.variables == null) {
+      throw new Error(`No variables provided for evaluate`);
+    }
+    return context.variables[ast.value];
+  },
+  /**
+   * Evaluates a Unary expression by passing the right side through the
+   * operator's eval function.
+   */
+  [AstNodeType.Unary]: (ast: UnaryNode, context: EvaluateContext) => {
+    return context.grammar.unaryOps[ast.operator].fn(evaluate(ast.right, context));
+  },
+  /**
+   * Evaluates a Binary node by running the Grammar's evaluator for the given operator.
+   */
+  [AstNodeType.Binary]: (ast: BinaryNode, context: EvaluateContext) => {
+    const binaryOp = context.grammar.binaryOps[ast.operator];
+    return binaryOp.delay
+      ? binaryOp.fn(evaluate(ast.left, context), () => evaluate(ast.right, context))
+      : binaryOp.fn(evaluate(ast.left, context), evaluate(ast.right, context));
+  },
+  /**
+   * Evaluates a Member by applying it to the `left` value.
+   */
+  [AstNodeType.Member]: (ast: MemberNode, context: EvaluateContext) => {
+    const left = evaluate(ast.left, context);
+    if (left == null) {
+      if (ast.optional) {
+        context.leftNull = true;
+        return;
+      }
+      if (ast.leftOptional && context.leftNull) {
+        return;
+      }
+      throw new Error(`Cannot read properties of ${left} (reading ${evaluate(ast.right, context)})`);
+    }
+    context.leftNull = false;
+    const key = evaluate(ast.right, context);
+    if (Array.isArray(left) && key < 0) {
+      return left[left.length + key];
+    }
+    return left[key];
+  },
+  /**
+   * Evaluates an Array by returning its value, with each element
+   * independently run through the evaluator.
+   */
+  [AstNodeType.Array]: (ast: ArrayNode, context: EvaluateContext) => ast.value.map((item) => evaluate(item, context)),
+  /**
+   * Evaluates an Object by returning its value, with each key
+   * independently run through the evaluator.
+   */
+  [AstNodeType.Object]: (ast: ObjectNode, context: EvaluateContext) => {
+    const result: any = {};
+    ast.entries.forEach((entry) => {
+      result[evaluate(entry.key, context)] = evaluate(entry.value, context);
+    });
+    return result;
+  },
+  /**
+   * Evaluates a Conditional node by first evaluating its test branch,
+   * and resolving with the consequent branch if the test is truthy, or the
+   * alternate branch if it is not. If there is no consequent branch, the test
+   * result will be used instead.
+   */
+  [AstNodeType.Conditional]: (ast: ConditionalNode, context: EvaluateContext) => {
+    const test = evaluate(ast.test, context);
+    return test
+      ? (ast.consequent ? evaluate(ast.consequent, context) : test)
+      : evaluate(ast.alternate, context);
+  },
+  /**
+   * Evaluates a FunctionCall node by applying a function from the transforms map or a Lambda or context.
+   */
+  [AstNodeType.FunctionCall]: (ast: FunctionCallNode, context: EvaluateContext) => {
+    const fn = ast.func.type === AstNodeType.Identifier
+      ? (context.grammar.transforms[ast.func.value] || evaluate(ast.func, context))
+      : evaluate(ast.func, context);
+    if (fn == null) {
+      if (ast.optional) {
+        context.leftNull = true;
+        return;
+      }
+      if (ast.leftOptional && context.leftNull) {
+        return;
+      }
+    }
+    if (typeof fn !== 'function') {
+      throw new Error(`${fn} is not a function`);
+    }
+    context.leftNull = false;
+    const args = ast.args.map((item) => evaluate(item, context));
+    return fn(...args);
+  },
+  /**
+   * Evaluates a Lambda expression by passing the args.
+   */
+  [AstNodeType.Lambda]: (ast: LambdaNode, context: EvaluateContext) => {
+    return (...args: any[]) => {
+      return evaluate(ast.expr, { ...context, args });
+    };
+  },
+  [AstNodeType.Def]: (ast: DefNode, context: EvaluateContext) => {
+    const newContext = { ...context, locals: { ...context.locals } };
+    ast.defs.forEach((def) => {
+      newContext.locals[def.name] = evaluate(def.value, newContext);
+    });
+    const result = evaluate(ast.statement, newContext);
+    return result;
+  },
+};
 
 /**
- * The Evaluator takes an expression tree as generated by the
- * Parser and calculates its value within a given context. The
- * collection of transforms, context, and a relative context to be used as the
- * root for relative identifiers, are all specific to an Evaluator instance.
- * When any of these things change, a new instance is required.  However, a
- * single instance can be used to simultaneously evaluate different
- * expressions, and does not have to be re-instantiated for each.
- * @param grammar A grammar map against which to evaluate the expression tree
- * @param [context] A map of variable keys to their values. This will be
- *      accessed to resolve the value of each non-relative identifier. Any
- *      Promise values will be passed to the expression as their resolved
- *      value.
- * @param [args] arguments for lambda
+ * Evaluates an expression tree within the configured context.
  */
-const NullSignal = {};
-
-export function Evaluator(grammar: Grammar, context?: any, locals: Record<string, any> = {}, args?: any[]) {
-  const handlers = {
-    /**
-     * Evaluates a Literal by returning its value property.
-     * @param ast An expression tree with a Literal as its only node
-     */
-    [AstNodeType.Literal]: (ast: LiteralNode) => ast.value,
-    /**
-     * Evaluates an Identifier by either stemming from the evaluated 'from'
-     * expression tree or accessing the context provided when this Evaluator was
-     * constructed.
-     * @param ast An expression tree with an Identifier as the top node
-     */
-    [AstNodeType.Identifier]: (ast: IdentifierNode) => {
-      if (args && ast.argIndex !== undefined) return args[ast.argIndex];
-      if (hasOwn(locals, ast.value)) return locals[ast.value];
-      if (context == null) {
-        throw new Error(`No context provided for evaluate`);
-      }
-      return context[ast.value];
-    },
-    /**
-     * Evaluates a Unary expression by passing the right side through the
-     * operator's eval function.
-     * @param ast An expression tree with a Unary as the top node
-     */
-    [AstNodeType.Unary]: (ast: UnaryNode) => {
-      return grammar.unaryOps[ast.operator].fn(evaluate(ast.right));
-    },
-    /**
-     * Evaluates a Binary node by running the Grammar's evaluator for
-     * the given operator.
-     * @param ast An expression tree with a Binary as the top
-     *      node
-     */
-    [AstNodeType.Binary]: (ast: BinaryNode) => {
-      const binaryOp = grammar.binaryOps[ast.operator];
-      return binaryOp.delay
-        ? binaryOp.fn(evaluate(ast.left), () => evaluate(ast.right))
-        : binaryOp.fn(evaluate(ast.left), evaluate(ast.right));
-    },
-    /**
-     * Evaluates a Member by applying it to the subject value.
-     * @param ast An expression tree with a Member as the top node
-     * @param nullSignal optional chain null signal
-     */
-    [AstNodeType.Member]: (ast: MemberNode, nullSignal?: boolean) => {
-      const left = evaluate(ast.left, ast.leftOptional);
-      if (left === NullSignal || (left == null && ast.optional)) {
-        return nullSignal ? NullSignal : undefined;
-      }
-      if (left == null) {
-        throw new Error(`Cannot read properties of ${left} (reading ${evaluate(ast.right)})`);
-      }
-      const key = evaluate(ast.right);
-      if (Array.isArray(left) && key < 0) {
-        return left[left.length + key];
-      }
-      return left[key];
-    },
-    /**
-     * Evaluates an Array by returning its value, with each element
-     * independently run through the evaluator.
-     * @param ast An expression tree with an
-     *      Object as the top node
-     */
-    [AstNodeType.Array]: (ast: ArrayNode) => ast.value.map((item) => evaluate(item)),
-    /**
-     * Evaluates an Object by returning its value, with each key
-     * independently run through the evaluator.
-     * @param ast An expression tree with an Object as the top node
-     */
-    [AstNodeType.Object]: (ast: ObjectNode) => {
-      const result: any = {};
-      ast.entries.forEach((entry) => {
-        result[evaluate(entry.key)] = evaluate(entry.value);
-      });
-      return result;
-    },
-    /**
-     * Evaluates a Conditional node by first evaluating its test branch,
-     * and resolving with the consequent branch if the test is truthy, or the
-     * alternate branch if it is not. If there is no consequent branch, the test
-     * result will be used instead.
-     * @param ast An expression tree with a Conditional as
-     *      the top node
-     */
-    [AstNodeType.Conditional]: (ast: ConditionalNode) => {
-      const test = evaluate(ast.test);
-      return test
-        ? (ast.consequent ? evaluate(ast.consequent) : test)
-        : evaluate(ast.alternate);
-    },
-    /**
-     * Evaluates a FunctionCall node by applying a function from the transforms map or a Lambda or Context.
-     * @param ast An expression tree with a Transform as the top node
-     * @param nullSignal optional chain null signal
-     */
-    [AstNodeType.FunctionCall]: (ast: FunctionCallNode, nullSignal?: boolean) => {
-      const fn = ast.func.type === AstNodeType.Identifier
-        ? (grammar.transforms[ast.func.value] || evaluate(ast.func, ast.leftOptional))
-        : evaluate(ast.func, ast.leftOptional);
-      if (fn === NullSignal || (fn == null && ast.optional)) {
-        return nullSignal ? NullSignal : undefined;
-      }
-      if (typeof fn !== 'function') {
-        throw new Error(`${fn} is not a function`);
-      }
-      const args = ast.args.map((item) => evaluate(item));
-      return fn(...args);
-    },
-    /**
-     * Evaluates a Lambda expression by passing the context merge with the args.
-     * @param ast An expression tree with a Lambda as the top node
-     * @returns A function of the Lambda
-     */
-    [AstNodeType.Lambda]: (ast: LambdaNode) => {
-      return (..._args: any[]) => {
-        const evaluator = Evaluator(grammar, context, locals, _args);
-        return evaluator.evaluate(ast.expr);
-      };
-    },
-    [AstNodeType.Def]: (ast: DefNode) => {
-      const oldLocals = locals;
-      locals = { ...locals };
-      ast.defs.forEach((def) => {
-        locals[def.name] = evaluate(def.value);
-      });
-      const result = evaluate(ast.statement);
-      locals = oldLocals;
-      return result;
-    },
-  };
-
-  /**
-   * Evaluates an expression tree within the configured context.
-   * @param ast An expression tree object
-   * @param [nullSignal] optional chain null signal
-   * @returns the resulting value of the expression.
-   */
-  const evaluate = <T = any>(ast: AstNode, nullSignal?: boolean): T | undefined => {
-    return handlers[ast.type](ast as any, nullSignal);
-  };
-
-  return { evaluate };
-}
-
-const hasOwn = (o: any, key: string) => Object.prototype.hasOwnProperty.call(o, key);
+export const evaluate = (ast: AstNode, context: EvaluateContext): any => {
+  return handlers[ast.type](ast as any, context);
+};

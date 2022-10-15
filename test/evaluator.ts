@@ -2,37 +2,34 @@ import { expect } from 'chai';
 import { getGrammar } from '../src/grammar';
 import { Tokenizer } from '../src/tokenizer';
 import { Parser } from '../src/parser';
-import { Evaluator } from '../src/evaluator';
+import { evaluate as _evaluate } from '../src/evaluator';
 
 describe('Evaluator', () => {
-  const evaluate = (exp: string, context?: any, transforms?: Record<string, Function>) => {
+  const evaluate = (exp: string, variables?: any, transforms?: Record<string, Function>) => {
     const grammar = getGrammar();
+    grammar.transforms = { ...grammar.transforms, ...transforms };
     const tokenizer = Tokenizer(grammar);
-    const evaluator = Evaluator({
-      ...grammar,
-      transforms: { ...grammar.transforms, ...transforms },
-    }, context);
     const parser = new Parser(grammar);
     const tokens = tokenizer.tokenize(exp);
     parser.addTokens(tokens);
     const ast = parser.complete()!;
     if (!ast) return;
-    const result = evaluator.evaluate(ast);
+    const result = _evaluate(ast, { grammar, variables });
     return result;
   };
 
   describe('Grammars', () => {
     it('+', () => {
-      const context = { x: { y: '1' } };
+      const variables = { x: { y: '1' } };
       expect(evaluate('+1')).to.equal(1);
       expect(evaluate('2+1')).to.equal(2 + 1);
-      expect(evaluate('+x.y', context)).to.equal(1);
+      expect(evaluate('+x.y', variables)).to.equal(1);
     });
     it('-', () => {
-      const context = { x: { y: '1' } };
-      expect(evaluate('-1', context)).to.equal(-1);
-      expect(evaluate('2-1', context)).to.equal(1);
-      expect(evaluate('-x.y', context)).to.equal(-1);
+      const variables = { x: { y: '1' } };
+      expect(evaluate('-1', variables)).to.equal(-1);
+      expect(evaluate('2-1', variables)).to.equal(1);
+      expect(evaluate('-x.y', variables)).to.equal(-1);
     });
     it('%', () => {
       expect(evaluate('4%3')).to.equal(1);
@@ -41,25 +38,25 @@ describe('Evaluator', () => {
       expect(evaluate('4^3')).to.equal(4 ** 3);
     });
     it('==', () => {
-      const context = { a: null, b: undefined };
-      expect(evaluate('4 == 3', context)).to.equal(false);
-      expect(evaluate('4 == "4"', context)).to.equal(false);
-      expect(evaluate('a == a', context)).to.equal(true);
+      const variables = { a: null, b: undefined };
+      expect(evaluate('4 == 3', variables)).to.equal(false);
+      expect(evaluate('4 == "4"', variables)).to.equal(false);
+      expect(evaluate('a == a', variables)).to.equal(true);
     });
     it('!=', () => {
-      const context = { a: null, b: undefined };
-      expect(evaluate('4 != 3', context)).to.equal(true);
-      expect(evaluate('4 != "4"', context)).to.equal(true);
-      expect(evaluate('a != a', context)).to.equal(false);
+      const variables = { a: null, b: undefined };
+      expect(evaluate('4 != 3', variables)).to.equal(true);
+      expect(evaluate('4 != "4"', variables)).to.equal(true);
+      expect(evaluate('a != a', variables)).to.equal(false);
     });
     it('<', () => {
       expect(evaluate('4<3')).to.equal(false);
     });
     it('in', () => {
-      const context = { foo: [1, 2, 3, 4], bar: { x: 4 } };
-      expect(evaluate('4 in "1234"', context)).to.equal(true);
-      expect(evaluate('4 in foo', context)).to.equal(true);
-      expect(evaluate('4 in bar', context)).to.equal(false);
+      const variables = { foo: [1, 2, 3, 4], bar: { x: 4 } };
+      expect(evaluate('4 in "1234"', variables)).to.equal(true);
+      expect(evaluate('4 in foo', variables)).to.equal(true);
+      expect(evaluate('4 in bar', variables)).to.equal(false);
     });
     it('!', () => {
       expect(evaluate('!3')).to.equal(false);
@@ -88,16 +85,16 @@ describe('Evaluator', () => {
   });
   describe('Unary Expression', () => {
     it('should convert string to number by +', () => {
-      const context = { x: { y: '1' } };
-      expect(evaluate('+x.y', context)).to.equal(1);
+      const variables = { x: { y: '1' } };
+      expect(evaluate('+x.y', variables)).to.equal(1);
     });
     it('should convert string to number by -', () => {
-      const context = { x: { y: '1' } };
-      expect(evaluate('-x.y', context)).to.equal(-1);
+      const variables = { x: { y: '1' } };
+      expect(evaluate('-x.y', variables)).to.equal(-1);
     });
     it('should convert boolean to number by !', () => {
-      const context = { x: { y: '1' } };
-      expect(evaluate('!!x.y', context)).to.equal(true);
+      const variables = { x: { y: '1' } };
+      expect(evaluate('!!x.y', variables)).to.equal(true);
     });
   });
   describe('Binary Expression', () => {
@@ -122,12 +119,12 @@ describe('Evaluator', () => {
       expect(evaluate('"Hello" + (4+4) + "Wo\\"rld"')).to.equal('Hello8Wo"rld');
     });
     it('should evaluate a list concat', () => {
-      const context = { a: [1, 2], b: [3, 4] };
-      expect(evaluate('a+b', context)).to.deep.equal([1, 2, 3, 4]);
+      const variables = { a: [1, 2], b: [3, 4] };
+      expect(evaluate('a+b', variables)).to.deep.equal([1, 2, 3, 4]);
     });
     it('should evaluate a object concat', () => {
-      const context = { a: { x: 1 }, b: { y: 2 } };
-      expect(evaluate('a+b', context)).to.deep.equal({ x: 1, y: 2 });
+      const variables = { a: { x: 1 }, b: { y: 2 } };
+      expect(evaluate('a+b', variables)).to.deep.equal({ x: 1, y: 2 });
     });
     it('should evaluate a true comparison expression', () => {
       expect(evaluate('2 > 1')).to.equal(true);
@@ -158,24 +155,24 @@ describe('Evaluator', () => {
   });
   describe('Member Access', () => {
     it('should evaluate an identifier chain', () => {
-      const context = { foo: { baz: { bar: 'tek' } } };
-      expect(evaluate('foo.baz.bar', context)).to.equal(context.foo.baz.bar);
+      const variables = { foo: { baz: { bar: 'tek' } } };
+      expect(evaluate('foo.baz.bar', variables)).to.equal(variables.foo.baz.bar);
     });
     it('should make array elements addressable by index', () => {
-      const context = {
+      const variables = {
         foo: {
           bar: [{ tek: 'tok' }, { tek: 'baz' }, { tek: 'foz' }],
         },
         a: [1, 2, 3],
       };
-      expect(evaluate('foo.bar[1].tek', context)).to.equal('baz');
-      expect(evaluate('a[0]', context)).to.equal(1);
-      expect(evaluate('a[-1]', context)).to.equal(3);
-      expect(evaluate('a[1+1]', context)).to.equal(3);
+      expect(evaluate('foo.bar[1].tek', variables)).to.equal('baz');
+      expect(evaluate('a[0]', variables)).to.equal(1);
+      expect(evaluate('a[-1]', variables)).to.equal(3);
+      expect(evaluate('a[1+1]', variables)).to.equal(3);
     });
     it('should allow index object properties', () => {
-      const context = { foo: { baz: { bar: 'tek' } } };
-      expect(evaluate('foo["ba" + "z"].bar', context)).to.equal(context.foo.baz.bar);
+      const variables = { foo: { baz: { bar: 'tek' } } };
+      expect(evaluate('foo["ba" + "z"].bar', variables)).to.equal(variables.foo.baz.bar);
     });
     it('should allow index on string literal', () => {
       expect(evaluate('"abc"[0]')).to.equal('a');
@@ -186,39 +183,39 @@ describe('Evaluator', () => {
   });
   describe('Optional Chain', () => {
     it('optional chain (null)?.bar.baz', () => {
-      const context = {};
-      expect(evaluate('foo?.bar.baz', context)).to.equal(undefined);
+      const variables = {};
+      expect(evaluate('foo?.bar.baz', variables)).to.equal(undefined);
     });
     it('optional chain (...)?.bar.baz', () => {
-      const context = { foo: {} };
-      expect(() => evaluate('foo?.bar.baz', context)).to
+      const variables = { foo: {} };
+      expect(() => evaluate('foo?.bar.baz', variables)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.["bar"].baz', () => {
-      const context = {};
-      expect(evaluate('foo?.["bar"].baz', context)).to.equal(undefined);
+      const variables = {};
+      expect(evaluate('foo?.["bar"].baz', variables)).to.equal(undefined);
     });
     it('optional chain (...)?.["bar"].baz', () => {
-      const context = { foo: {} };
-      expect(() => evaluate('foo?.["bar"].baz', context)).to
+      const variables = { foo: {} };
+      expect(() => evaluate('foo?.["bar"].baz', variables)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.().baz', () => {
-      const context = {};
-      expect(evaluate('foo?.().baz', context)).to.equal(undefined);
+      const variables = {};
+      expect(evaluate('foo?.().baz', variables)).to.equal(undefined);
     });
     it('optional chain (...)?.().baz', () => {
-      const context = { foo: () => undefined };
-      expect(() => evaluate('foo?.().baz', context)).to
+      const variables = { foo: () => undefined };
+      expect(() => evaluate('foo?.().baz', variables)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.bar()', () => {
-      const context = {};
-      expect(evaluate('foo?.bar()', context)).to.equal(undefined);
+      const variables = {};
+      expect(evaluate('foo?.bar()', variables)).to.equal(undefined);
     });
     it('optional chain (...)?.bar()', () => {
-      const context = { foo: {} };
-      expect(() => evaluate('foo?.bar()', context)).to
+      const variables = { foo: {} };
+      expect(() => evaluate('foo?.bar()', variables)).to
         .throw('undefined is not a function');
     });
   });
@@ -241,8 +238,8 @@ describe('Evaluator', () => {
       expect(evaluate('["foo", 1+2]')).to.deep.equal(['foo', 3]);
     });
     it('should allow properties on empty arrays', () => {
-      const context = { foo: {} };
-      expect(evaluate('[].baz', context)).to.equal(undefined);
+      const variables = { foo: {} };
+      expect(evaluate('[].baz', variables)).to.equal(undefined);
     });
   });
   describe('Define variables', () => {
@@ -256,28 +253,28 @@ describe('Evaluator', () => {
       expect(evaluate('def a = 1; def a = a + 1; def b = 2; a + b')).to.deep.equal(4);
     });
     it('def variables in sub-expression', () => {
-      const context = { x: true, a: 1, b: 2 };
-      expect(evaluate('(x ? (def a = 10; a) : b) + a', context)).to.deep.equal(11);
+      const variables = { x: true, a: 1, b: 2 };
+      expect(evaluate('(x ? (def a = 10; a) : b) + a', variables)).to.deep.equal(11);
     });
   });
   describe('Transform', () => {
     it('should apply transforms', () => {
-      const context = { foo: 10 };
+      const variables = { foo: 10 };
       const half = (val: number) => val / 2;
-      expect(evaluate('foo|half + 3', context, { half })).to.equal(8);
+      expect(evaluate('foo|half + 3', variables, { half })).to.equal(8);
     });
     it('should apply data function transforms', () => {
-      const context = {
+      const variables = {
         foo: 10,
         double: (v: number) => v * 2,
         fns: {
           half: (v: number) => v / 2,
         },
       };
-      expect(evaluate('foo|double + 3', context)).to.equal(23);
-      expect(evaluate('foo|(fns.half) + 3', context)).to.equal(8);
-      expect(evaluate('foo|(fns["half"]) + 3', context)).to.equal(8);
-      expect(evaluate('foo|(fns["ha" + "lf"]) + 3', context)).to.equal(8);
+      expect(evaluate('foo|double + 3', variables)).to.equal(23);
+      expect(evaluate('foo|(fns.half) + 3', variables)).to.equal(8);
+      expect(evaluate('foo|(fns["half"]) + 3', variables)).to.equal(8);
+      expect(evaluate('foo|(fns["ha" + "lf"]) + 3', variables)).to.equal(8);
     });
     it('should apply a transform with multiple args', () => {
       const concat = (val: string, a1: string, a2: string, a3: string) => val + ': ' + a1 + a2 + a3;
@@ -285,48 +282,48 @@ describe('Evaluator', () => {
         .to.equal('foo: bazbartek');
     });
     it('should throw when transform does not exist', () => {
-      const context = {};
-      expect(() => evaluate('"hello"|world', context)).to
+      const variables = {};
+      expect(() => evaluate('"hello"|world', variables)).to
         .throw('undefined is not a function');
     });
     it('should filter arrays', () => {
-      const context = {
+      const variables = {
         foo: {
           bar: [{ tek: 'hello' }, { tek: 'baz' }, { tok: 'baz' }],
         },
       };
       const filter = (arr: any[], fn: (i: any) => any) => arr.filter(fn);
-      expect(evaluate('foo.bar|filter(@.tek == "baz")', context, { filter }))
+      expect(evaluate('foo.bar|filter(@.tek == "baz")', variables, { filter }))
         .to.deep.equal([{ tek: 'baz' }]);
     });
     it('should map arrays', () => {
-      const context = {
+      const variables = {
         foo: {
           bar: [{ tek: 'hello' }, { tek: 'baz' }, { tok: 'baz' }],
         },
       };
       const map = (arr: any[], fn: (i: any) => any) => arr.map(fn);
-      expect(evaluate('foo.bar|map({tek: "1"+(@.tek||@.tok)})', context, { map }))
+      expect(evaluate('foo.bar|map({tek: "1"+(@.tek||@.tok)})', variables, { map }))
         .to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
     });
     it('should reduce arrays', () => {
-      const context = {
+      const variables = {
         foo: {
           bar: [{ x: 1 }, { x: 2 }, { x: 3 }],
         },
       };
       const sum = <T>(arr: T[], by: (i: T) => number) => arr.reduce((n, i) => n + (by(i) || 0), 0);
-      expect(evaluate('-(foo.bar|sum(@.x))', context, { sum })).to.equal(-6);
+      expect(evaluate('-(foo.bar|sum(@.x))', variables, { sum })).to.equal(-6);
     });
   });
   describe('Lambda', () => {
     it('should apply lambda transforms', () => {
-      const context = { foo: 10 };
-      expect(evaluate('foo|(@>10)?"large":"small"', context)).to.equal('small');
+      const variables = { foo: 10 };
+      expect(evaluate('foo|(@>10)?"large":"small"', variables)).to.equal('small');
     });
     it('should apply complex lambda transforms', () => {
-      const context = { foo: 10 };
-      expect(evaluate('(foo+3+5)|({x:@/2,y:@/2+3})', context)).to.deep.equal({ x: 9, y: 12 });
+      const variables = { foo: 10 };
+      expect(evaluate('(foo+3+5)|({x:@/2,y:@/2+3})', variables)).to.deep.equal({ x: 9, y: 12 });
     });
     it('should define lambda with args', () => {
       expect(evaluate('def isLarge = @>@1;isLarge(1+2+3,4+5+6)?"great":"small"')).to.equal('small');
@@ -334,14 +331,14 @@ describe('Evaluator', () => {
   });
   describe('Function', () => {
     it('should call function', () => {
-      const context = { foo: 10, fns: { half: (v: number) => v / 2 } };
-      expect(evaluate('fns.half(foo) + 3', context)).to.equal(8);
-      expect(evaluate('fns["half"](foo) + 3', context)).to.equal(8);
-      expect(evaluate('fns["ha" + "lf"](foo) + 3', context)).to.equal(8);
+      const variables = { foo: 10, fns: { half: (v: number) => v / 2 } };
+      expect(evaluate('fns.half(foo) + 3', variables)).to.equal(8);
+      expect(evaluate('fns["half"](foo) + 3', variables)).to.equal(8);
+      expect(evaluate('fns["ha" + "lf"](foo) + 3', variables)).to.equal(8);
     });
     it('should throw when function does not exist', () => {
-      const context = {};
-      expect(() => evaluate('world()', context)).to
+      const variables = {};
+      expect(() => evaluate('world()', variables)).to
         .throw('undefined is not a function');
     });
   });

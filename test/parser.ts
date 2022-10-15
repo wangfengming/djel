@@ -727,7 +727,7 @@ describe('Parser', () => {
         ],
       });
     });
-    it('should apply context function as transform', () => {
+    it('should apply variables function as transform', () => {
       expect(parse('arr|(test)')).to.deep.equal({
         type: AstNodeType.FunctionCall,
         func: { type: AstNodeType.Identifier, value: 'test' },
@@ -801,7 +801,7 @@ describe('Parser', () => {
         ],
       });
     });
-    it('should apply context function as transform', () => {
+    it('should apply variables function as transform', () => {
       expect(parse('test(arr)')).to.deep.equal({
         type: AstNodeType.FunctionCall,
         func: { type: AstNodeType.Identifier, value: 'test' },

@@ -211,3 +211,11 @@ export interface StateTypeOpts {
   toState?: StateType;
   handler?: (this: Parser, token: Token) => void;
 }
+
+export interface EvaluateContext {
+  grammar: Grammar;
+  variables?: any;
+  locals?: Record<string, any>;
+  args?: any[];
+  leftNull?: boolean;
+}
