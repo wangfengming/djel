@@ -1,6 +1,6 @@
 {
   "name": "djexl-js",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Dynamic javascript Expression Language: Powerful context-based expression parser and evaluator.",
   "main": "lib/index.js",
   "module": "dist/bundle.es.js",
