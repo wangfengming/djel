@@ -5,183 +5,161 @@ import { Parser } from '../src/parser';
 import { Evaluator } from '../src/evaluator';
 
 describe('Evaluator', () => {
-  let grammar: ReturnType<typeof getGrammar>;
-  let tokenizer: ReturnType<typeof Tokenizer>;
-  beforeEach(() => {
-    grammar = getGrammar();
-    tokenizer = Tokenizer(grammar);
-  });
-
-  function toTree(exp: string) {
-    const p = new Parser(grammar);
-    p.addTokens(tokenizer.tokenize(exp));
-    return p.complete()!;
-  }
+  const evaluate = (exp: string, context?: any, transforms?: Record<string, Function>) => {
+    const grammar = getGrammar();
+    const tokenizer = Tokenizer(grammar);
+    const evaluator = Evaluator({
+      ...grammar,
+      transforms: { ...grammar.transforms, ...transforms },
+    }, context);
+    const parser = new Parser(grammar);
+    const tokens = tokenizer.tokenize(exp);
+    parser.addTokens(tokens);
+    const ast = parser.complete()!;
+    if (!ast) return;
+    const result = evaluator.evaluate(ast);
+    return result;
+  };
 
   describe('Grammars', () => {
     it('+', () => {
-      const e = Evaluator(grammar, { x: { y: '1' } });
-      expect(e.evaluate(toTree('+1'))).to.equal(1);
-      expect(e.evaluate(toTree('2+1'))).to.equal(2 + 1);
-      expect(e.evaluate(toTree('+x.y'))).to.equal(1);
+      const context = { x: { y: '1' } };
+      expect(evaluate('+1')).to.equal(1);
+      expect(evaluate('2+1')).to.equal(2 + 1);
+      expect(evaluate('+x.y', context)).to.equal(1);
     });
     it('-', () => {
-      const e = Evaluator(grammar, { x: { y: '1' } });
-      expect(e.evaluate(toTree('-1'))).to.equal(-1);
-      expect(e.evaluate(toTree('2-1'))).to.equal(1);
-      expect(e.evaluate(toTree('-x.y'))).to.equal(-1);
+      const context = { x: { y: '1' } };
+      expect(evaluate('-1', context)).to.equal(-1);
+      expect(evaluate('2-1', context)).to.equal(1);
+      expect(evaluate('-x.y', context)).to.equal(-1);
     });
     it('%', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('4%3'))).to.equal(1);
+      expect(evaluate('4%3')).to.equal(1);
     });
     it('^', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('4^3'))).to.equal(4 ** 3);
+      expect(evaluate('4^3')).to.equal(4 ** 3);
     });
     it('==', () => {
-      const e = Evaluator(grammar, { a: null, b: undefined });
-      expect(e.evaluate(toTree('4 == 3'))).to.equal(false);
-      expect(e.evaluate(toTree('4 == "4"'))).to.equal(false);
-      expect(e.evaluate(toTree('a == a'))).to.equal(true);
+      const context = { a: null, b: undefined };
+      expect(evaluate('4 == 3', context)).to.equal(false);
+      expect(evaluate('4 == "4"', context)).to.equal(false);
+      expect(evaluate('a == a', context)).to.equal(true);
     });
     it('!=', () => {
-      const e = Evaluator(grammar, { a: null, b: undefined });
-      expect(e.evaluate(toTree('4 != 3'))).to.equal(true);
-      expect(e.evaluate(toTree('4 != "4"'))).to.equal(true);
-      expect(e.evaluate(toTree('a != a'))).to.equal(false);
+      const context = { a: null, b: undefined };
+      expect(evaluate('4 != 3', context)).to.equal(true);
+      expect(evaluate('4 != "4"', context)).to.equal(true);
+      expect(evaluate('a != a', context)).to.equal(false);
     });
     it('<', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('4<3'))).to.equal(false);
+      expect(evaluate('4<3')).to.equal(false);
     });
     it('in', () => {
-      const e = Evaluator(grammar, { foo: [1, 2, 3, 4], bar: { x: 4 } });
-      expect(e.evaluate(toTree('4 in "1234"'))).to.equal(true);
-      expect(e.evaluate(toTree('4 in foo'))).to.equal(true);
-      expect(e.evaluate(toTree('4 in bar'))).to.equal(false);
+      const context = { foo: [1, 2, 3, 4], bar: { x: 4 } };
+      expect(evaluate('4 in "1234"', context)).to.equal(true);
+      expect(evaluate('4 in foo', context)).to.equal(true);
+      expect(evaluate('4 in bar', context)).to.equal(false);
     });
     it('!', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('!3'))).to.equal(false);
+      expect(evaluate('!3')).to.equal(false);
     });
     it('||', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('true||false'))).to.equal(true);
+      expect(evaluate('true||false')).to.equal(true);
     });
   });
   describe('Literal', () => {
     it('number', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('10'))).to.equal(10);
-      expect(e.evaluate(toTree('10.1'))).to.equal(10.1);
-      expect(e.evaluate(toTree('-10'))).to.equal(-10);
+      expect(evaluate('10')).to.equal(10);
+      expect(evaluate('10.1')).to.equal(10.1);
+      expect(evaluate('-10')).to.equal(-10);
     });
     it('string', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"Hello"'))).to.equal('Hello');
-      expect(e.evaluate(toTree('"Hello\\""'))).to.equal('Hello"');
+      expect(evaluate('"Hello"')).to.equal('Hello');
+      expect(evaluate('"Hello\\""')).to.equal('Hello"');
     });
     it('boolean', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('true'))).to.equal(true);
-      expect(e.evaluate(toTree('false'))).to.equal(false);
+      expect(evaluate('true')).to.equal(true);
+      expect(evaluate('false')).to.equal(false);
     });
     it('null', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('null'))).to.equal(null);
+      expect(evaluate('null')).to.equal(null);
     });
   });
   describe('Unary Expression', () => {
     it('should convert string to number by +', () => {
       const context = { x: { y: '1' } };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('+x.y'))).to.equal(1);
+      expect(evaluate('+x.y', context)).to.equal(1);
     });
     it('should convert string to number by -', () => {
       const context = { x: { y: '1' } };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('-x.y'))).to.equal(-1);
+      expect(evaluate('-x.y', context)).to.equal(-1);
     });
     it('should convert boolean to number by !', () => {
       const context = { x: { y: '1' } };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('!!x.y'))).to.equal(true);
+      expect(evaluate('!!x.y', context)).to.equal(true);
     });
   });
   describe('Binary Expression', () => {
     it('should evaluate an arithmetic expression', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('(2 + 3) * 4'))).to.equal(20);
+      expect(evaluate('(2 + 3) * 4')).to.equal(20);
     });
     it('should evaluate right-to-left for ^', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('2 ^ 3 ^ 2'))).to.equal(2 ** 3 ** 2);
-      expect(e.evaluate(toTree('2 ^ 3 ^ 2'))).to.equal(2 ** (3 ** 2));
-      expect(e.evaluate(toTree('(2 ^ 3) ^ 2'))).to.equal((2 ** 3) ** 2);
+      expect(evaluate('2 ^ 3 ^ 2')).to.equal(2 ** 3 ** 2);
+      expect(evaluate('2 ^ 3 ^ 2')).to.equal(2 ** (3 ** 2));
+      expect(evaluate('(2 ^ 3) ^ 2')).to.equal((2 ** 3) ** 2);
     });
     it('should handle priority correctly', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('3 + 4 * 5'))).to.equal(23);
-      expect(e.evaluate(toTree('(3 + 4) * 5'))).to.equal(35);
-      expect(e.evaluate(toTree('4 * 3 ^ 2'))).to.equal(36);
-      expect(e.evaluate(toTree('4 / 3 / 2'))).to.equal(4 / 3 / 2);
+      expect(evaluate('3 + 4 * 5')).to.equal(23);
+      expect(evaluate('(3 + 4) * 5')).to.equal(35);
+      expect(evaluate('4 * 3 ^ 2')).to.equal(36);
+      expect(evaluate('4 / 3 / 2')).to.equal(4 / 3 / 2);
     });
     it('should apply the // operator', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('7 // 2'))).to.equal(3);
+      expect(evaluate('7 // 2')).to.equal(3);
     });
     it('should evaluate a string concat', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"Hello" + (4+4) + "Wo\\"rld"'))).to.equal('Hello8Wo"rld');
+      expect(evaluate('"Hello" + (4+4) + "Wo\\"rld"')).to.equal('Hello8Wo"rld');
     });
     it('should evaluate a list concat', () => {
-      const e = Evaluator(grammar, { a: [1, 2], b: [3, 4] });
-      expect(e.evaluate(toTree('a+b'))).to.deep.equal([1, 2, 3, 4]);
+      const context = { a: [1, 2], b: [3, 4] };
+      expect(evaluate('a+b', context)).to.deep.equal([1, 2, 3, 4]);
     });
     it('should evaluate a object concat', () => {
-      const e = Evaluator(grammar, { a: { x: 1 }, b: { y: 2 } });
-      expect(e.evaluate(toTree('a+b'))).to.deep.equal({ x: 1, y: 2 });
+      const context = { a: { x: 1 }, b: { y: 2 } };
+      expect(evaluate('a+b', context)).to.deep.equal({ x: 1, y: 2 });
     });
     it('should evaluate a true comparison expression', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('2 > 1'))).to.equal(true);
+      expect(evaluate('2 > 1')).to.equal(true);
     });
     it('should evaluate a false comparison expression', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('2 <= 1'))).to.equal(false);
+      expect(evaluate('2 <= 1')).to.equal(false);
     });
     it('should evaluate a complex expression', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"foo" && 6 >= 6 && 0 + 1 && true'))).to.equal(true);
+      expect(evaluate('"foo" && 6 >= 6 && 0 + 1 && true')).to.equal(true);
     });
     it('should apply the "in" operator to strings', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"bar" in "foobartek"'))).to.equal(true);
-      expect(e.evaluate(toTree('"baz" in "foobartek"'))).to.equal(false);
+      expect(evaluate('"bar" in "foobartek"')).to.equal(true);
+      expect(evaluate('"baz" in "foobartek"')).to.equal(false);
     });
     it('should apply the "in" operator to arrays', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"bar" in ["foo","bar","tek"]'))).to.equal(true);
-      expect(e.evaluate(toTree('"baz" in ["foo","bar","tek"]'))).to.equal(false);
+      expect(evaluate('"bar" in ["foo","bar","tek"]')).to.equal(true);
+      expect(evaluate('"baz" in ["foo","bar","tek"]')).to.equal(false);
     });
   });
   describe('Ternary Expression', () => {
     it('should evaluate a conditional expression', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"foo" ? 1 : 2'))).to.equal(1);
-      expect(e.evaluate(toTree('"" ? 1 : 2'))).to.equal(2);
+      expect(evaluate('"foo" ? 1 : 2')).to.equal(1);
+      expect(evaluate('"" ? 1 : 2')).to.equal(2);
     });
     it('should allow missing consequent in ternary', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"foo" ?: "bar"'))).to.equal('foo');
+      expect(evaluate('"foo" ?: "bar"')).to.equal('foo');
     });
   });
   describe('Member Access', () => {
     it('should evaluate an identifier chain', () => {
       const context = { foo: { baz: { bar: 'tek' } } };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo.baz.bar'))).to.equal(context.foo.baz.bar);
+      expect(evaluate('foo.baz.bar', context)).to.equal(context.foo.baz.bar);
     });
     it('should make array elements addressable by index', () => {
       const context = {
@@ -190,125 +168,103 @@ describe('Evaluator', () => {
         },
         a: [1, 2, 3],
       };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo.bar[1].tek'))).to.equal('baz');
-      expect(e.evaluate(toTree('a[0]'))).to.equal(1);
-      expect(e.evaluate(toTree('a[-1]'))).to.equal(3);
-      expect(e.evaluate(toTree('a[1+1]'))).to.equal(3);
+      expect(evaluate('foo.bar[1].tek', context)).to.equal('baz');
+      expect(evaluate('a[0]', context)).to.equal(1);
+      expect(evaluate('a[-1]', context)).to.equal(3);
+      expect(evaluate('a[1+1]', context)).to.equal(3);
     });
     it('should allow index object properties', () => {
       const context = { foo: { baz: { bar: 'tek' } } };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo["ba" + "z"].bar'))).to.equal(context.foo.baz.bar);
+      expect(evaluate('foo["ba" + "z"].bar', context)).to.equal(context.foo.baz.bar);
     });
     it('should allow index on string literal', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"abc"[0]'))).to.equal('a');
+      expect(evaluate('"abc"[0]')).to.equal('a');
     });
     it('should allow access to literal properties', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('"foo".length'))).to.equal(3);
+      expect(evaluate('"foo".length')).to.equal(3);
     });
   });
   describe('Optional Chain', () => {
     it('optional chain (null)?.bar.baz', () => {
       const context = {};
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo?.bar.baz'))).to.equal(undefined);
+      expect(evaluate('foo?.bar.baz', context)).to.equal(undefined);
     });
     it('optional chain (...)?.bar.baz', () => {
       const context = { foo: {} };
-      const e = Evaluator(grammar, context);
-      expect(() => e.evaluate(toTree('foo?.bar.baz'))).to
+      expect(() => evaluate('foo?.bar.baz', context)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.["bar"].baz', () => {
       const context = {};
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo?.["bar"].baz'))).to.equal(undefined);
+      expect(evaluate('foo?.["bar"].baz', context)).to.equal(undefined);
     });
     it('optional chain (...)?.["bar"].baz', () => {
       const context = { foo: {} };
-      const e = Evaluator(grammar, context);
-      expect(() => e.evaluate(toTree('foo?.["bar"].baz'))).to
+      expect(() => evaluate('foo?.["bar"].baz', context)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.().baz', () => {
       const context = {};
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo?.().baz'))).to.equal(undefined);
+      expect(evaluate('foo?.().baz', context)).to.equal(undefined);
     });
     it('optional chain (...)?.().baz', () => {
       const context = { foo: () => undefined };
-      const e = Evaluator(grammar, context);
-      expect(() => e.evaluate(toTree('foo?.().baz'))).to
+      expect(() => evaluate('foo?.().baz', context)).to
         .throw('Cannot read properties of undefined (reading baz)');
     });
     it('optional chain (null)?.bar()', () => {
       const context = {};
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('foo?.bar()'))).to.equal(undefined);
+      expect(evaluate('foo?.bar()', context)).to.equal(undefined);
     });
     it('optional chain (...)?.bar()', () => {
       const context = { foo: {} };
-      const e = Evaluator(grammar, context);
-      expect(() => e.evaluate(toTree('foo?.bar()'))).to
+      expect(() => evaluate('foo?.bar()', context)).to
         .throw('undefined is not a function');
     });
   });
   describe('Object', () => {
     it('should evaluate an object literal', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('{foo: {"bar": "tek"}}'))).to.deep.equal({ foo: { bar: 'tek' } });
+      expect(evaluate('{foo: {"bar": "tek"}}')).to.deep.equal({ foo: { bar: 'tek' } });
     });
     it('should evaluate an empty object literal', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('{}'))).to.deep.equal({});
+      expect(evaluate('{}')).to.deep.equal({});
     });
     it('should evaluate an object with expression key', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('{["a"+1]:1}'))).to.deep.equal({ a1: 1 });
+      expect(evaluate('{["a"+1]:1}')).to.deep.equal({ a1: 1 });
     });
     it('should evaluate dot notation for object literals', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('{foo: "bar"}.foo'))).to.equal('bar');
+      expect(evaluate('{foo: "bar"}.foo')).to.equal('bar');
     });
   });
   describe('Array', () => {
     it('should evaluate array literals', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('["foo", 1+2]'))).to.deep.equal(['foo', 3]);
+      expect(evaluate('["foo", 1+2]')).to.deep.equal(['foo', 3]);
     });
     it('should allow properties on empty arrays', () => {
       const context = { foo: {} };
-      const e = Evaluator(grammar, context);
-      expect(e.evaluate(toTree('[].baz'))).to.equal(undefined);
+      expect(evaluate('[].baz', context)).to.equal(undefined);
     });
   });
   describe('Define variables', () => {
     it('def variables', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('def a = 1; def b = 2; a + b'))).to.deep.equal(3);
+      expect(evaluate('def a = 1; def b = 2; a + b')).to.deep.equal(3);
     });
     it('def variables computed', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('def a = 1; def b = a + 1; def c = a + b; a + b + c'))).to.deep.equal(6);
+      expect(evaluate('def a = 1; def b = a + 1; def c = a + b; a + b + c')).to.deep.equal(6);
     });
     it('def variables override', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('def a = 1; def a = a + 1; def b = 2; a + b'))).to.deep.equal(4);
+      expect(evaluate('def a = 1; def a = a + 1; def b = 2; a + b')).to.deep.equal(4);
     });
     it('def variables in sub-expression', () => {
-      const e = Evaluator(grammar, { x: true, a: 1, b: 2 });
-      expect(e.evaluate(toTree('(x ? (def a = 10; a) : b) + a'))).to.deep.equal(11);
+      const context = { x: true, a: 1, b: 2 };
+      expect(evaluate('(x ? (def a = 10; a) : b) + a', context)).to.deep.equal(11);
     });
   });
   describe('Transform', () => {
     it('should apply transforms', () => {
       const context = { foo: 10 };
       const half = (val: number) => val / 2;
-      const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, half } }, context);
-      expect(e.evaluate(toTree('foo|half + 3'))).to.equal(8);
+      expect(evaluate('foo|half + 3', context, { half })).to.equal(8);
     });
     it('should apply data function transforms', () => {
       const context = {
@@ -318,27 +274,19 @@ describe('Evaluator', () => {
           half: (v: number) => v / 2,
         },
       };
-      const e = Evaluator(grammar, context);
-      const tree1 = toTree('foo|double + 3');
-      expect(e.evaluate(tree1)).to.equal(23);
-      const tree2 = toTree('foo|(fns.half) + 3');
-      expect(e.evaluate(tree2)).to.equal(8);
-      const tree3 = toTree('foo|(fns["half"]) + 3');
-      expect(e.evaluate(tree3)).to.equal(8);
-      const tree4 = toTree('foo|(fns["ha" + "lf"]) + 3');
-      expect(e.evaluate(tree4)).to.equal(8);
+      expect(evaluate('foo|double + 3', context)).to.equal(23);
+      expect(evaluate('foo|(fns.half) + 3', context)).to.equal(8);
+      expect(evaluate('foo|(fns["half"]) + 3', context)).to.equal(8);
+      expect(evaluate('foo|(fns["ha" + "lf"]) + 3', context)).to.equal(8);
     });
     it('should apply a transform with multiple args', () => {
-      const concat = (val: string, a1: string, a2: string, a3: string) => {
-        return val + ': ' + a1 + a2 + a3;
-      };
-      const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, concat } });
-      expect(e.evaluate(toTree('"foo"|concat("baz", "bar", "tek")')))
+      const concat = (val: string, a1: string, a2: string, a3: string) => val + ': ' + a1 + a2 + a3;
+      expect(evaluate('"foo"|concat("baz", "bar", "tek")', null, { concat }))
         .to.equal('foo: bazbartek');
     });
     it('should throw when transform does not exist', () => {
-      const e = Evaluator(grammar, {});
-      expect(() => e.evaluate(toTree('"hello"|world'))).to
+      const context = {};
+      expect(() => evaluate('"hello"|world', context)).to
         .throw('undefined is not a function');
     });
     it('should filter arrays', () => {
@@ -348,8 +296,7 @@ describe('Evaluator', () => {
         },
       };
       const filter = (arr: any[], fn: (i: any) => any) => arr.filter(fn);
-      const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, filter } }, context);
-      expect(e.evaluate(toTree('foo.bar|filter(@.tek == "baz")')))
+      expect(evaluate('foo.bar|filter(@.tek == "baz")', context, { filter }))
         .to.deep.equal([{ tek: 'baz' }]);
     });
     it('should map arrays', () => {
@@ -359,8 +306,7 @@ describe('Evaluator', () => {
         },
       };
       const map = (arr: any[], fn: (i: any) => any) => arr.map(fn);
-      const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, map } }, context);
-      expect(e.evaluate(toTree('foo.bar|map({tek: "1"+(@.tek||@.tok)})')))
+      expect(evaluate('foo.bar|map({tek: "1"+(@.tek||@.tok)})', context, { map }))
         .to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
     });
     it('should reduce arrays', () => {
@@ -370,51 +316,38 @@ describe('Evaluator', () => {
         },
       };
       const sum = <T>(arr: T[], by: (i: T) => number) => arr.reduce((n, i) => n + (by(i) || 0), 0);
-      const e = Evaluator({ ...grammar, transforms: { ...grammar.transforms, sum } }, context);
-      const ast = toTree('-(foo.bar|sum(@.x))');
-      expect(e.evaluate(ast)).to.equal(-6);
+      expect(evaluate('-(foo.bar|sum(@.x))', context, { sum })).to.equal(-6);
     });
   });
   describe('Lambda', () => {
     it('should apply lambda transforms', () => {
       const context = { foo: 10 };
-      const e = Evaluator(grammar, context);
-      const tree = toTree('foo|(@>10)?"large":"small"');
-      expect(e.evaluate(tree)).to.equal('small');
+      expect(evaluate('foo|(@>10)?"large":"small"', context)).to.equal('small');
     });
     it('should apply complex lambda transforms', () => {
       const context = { foo: 10 };
-      const e = Evaluator(grammar, context);
-      const tree = toTree('(foo+3+5)|({x:@/2,y:@/2+3})');
-      expect(e.evaluate(tree)).to.deep.equal({ x: 9, y: 12 });
+      expect(evaluate('(foo+3+5)|({x:@/2,y:@/2+3})', context)).to.deep.equal({ x: 9, y: 12 });
     });
     it('should define lambda with args', () => {
-      const e = Evaluator(grammar);
-      const tree = toTree('def isLarge = @>@1;isLarge(1+2+3,4+5+6)?"great":"small"');
-      expect(e.evaluate(tree)).to.equal('small');
+      expect(evaluate('def isLarge = @>@1;isLarge(1+2+3,4+5+6)?"great":"small"')).to.equal('small');
     });
   });
   describe('Function', () => {
     it('should call function', () => {
       const context = { foo: 10, fns: { half: (v: number) => v / 2 } };
-      const e = Evaluator(grammar, context);
-      const tree1 = toTree('fns.half(foo) + 3');
-      expect(e.evaluate(tree1)).to.equal(8);
-      const tree2 = toTree('fns["half"](foo) + 3');
-      expect(e.evaluate(tree2)).to.equal(8);
-      const tree3 = toTree('fns["ha" + "lf"](foo) + 3');
-      expect(e.evaluate(tree3)).to.equal(8);
+      expect(evaluate('fns.half(foo) + 3', context)).to.equal(8);
+      expect(evaluate('fns["half"](foo) + 3', context)).to.equal(8);
+      expect(evaluate('fns["ha" + "lf"](foo) + 3', context)).to.equal(8);
     });
     it('should throw when function does not exist', () => {
-      const e = Evaluator(grammar, {});
-      expect(() => e.evaluate(toTree('world()'))).to
+      const context = {};
+      expect(() => evaluate('world()', context)).to
         .throw('undefined is not a function');
     });
   });
   describe('Whitespaces', () => {
     it('should handle an expression with arbitrary whitespace', () => {
-      const e = Evaluator(grammar);
-      expect(e.evaluate(toTree('(\t2\n+\n3) *\n4\n\r\n'))).to.equal(20);
+      expect(evaluate('(\t2\n+\n3) *\n4\n\r\n')).to.equal(20);
     });
   });
 });

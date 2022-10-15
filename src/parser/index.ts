@@ -1,18 +1,18 @@
 import type {
   AstNode,
   BinaryNode,
-  UnaryNode,
-  MemberNode,
-  LambdaNode,
-  OptionalBase,
   Def,
+  Grammar,
+  MemberNode,
+  OptionalBase,
   Token,
   TokenType,
-  StateType,
-  Grammar,
+  UnaryNode,
 } from '../types';
-import { states } from './states';
+import { AstNodeType, StateType } from '../types';
 import { MEMBER_PRIORITY } from '../grammar';
+import { set } from '../utils';
+import { states } from './states';
 
 /**
  * The Parser is a state machine that converts tokens into
@@ -25,9 +25,9 @@ import { MEMBER_PRIORITY } from '../grammar';
 export class Parser {
   _grammar: Omit<Grammar, 'transforms'>;
   _exprStr: string;
-  _stopMap: Partial<Record<TokenType, StateType>>;
+  _endTokens: Partial<Record<TokenType, StateType>>;
 
-  _state: StateType;
+  _stateType: StateType;
   _token?: Token;
   _tree?: AstNode;
   _cursor?: AstNode;
@@ -42,19 +42,23 @@ export class Parser {
    * This is useful for when a new Parser is instantiated to parse a subexpression,
    * as the parent Parser's expression string thus far can be passed for a more
    * user-friendly error message.
-   * @param [stopMap] mapping of token types to any truthy value. When the token type is encountered,
+   * @param [endTokens] mapping of token types to any truthy value. When the token type is encountered,
    * the parser will return the mapped value instead of boolean false.
    * @constructor
    */
   constructor(
     grammar: Omit<Grammar, 'transforms'>,
     prefix?: string,
-    stopMap?: Record<string, StateType>,
+    endTokens?: Record<string, StateType>,
   ) {
     this._grammar = grammar;
     this._exprStr = prefix || '';
-    this._stopMap = stopMap || {};
-    this._state = 'expectOperand';
+    this._endTokens = endTokens || {};
+    this._stateType = StateType.expectOperand;
+  }
+
+  private get _state() {
+    return states[this._stateType];
   }
 
   /**
@@ -66,30 +70,30 @@ export class Parser {
    * @returns the stopState value if this parser encountered a token
    *      in the stopState map; false if tokens can continue.
    */
-  addToken(token: Token): StateType | undefined {
-    if (this._state == 'complete') {
+  private addToken(token: Token): StateType | undefined {
+    if (this._stateType == StateType.complete) {
       throw new Error('Cannot add a new token to a completed Parser');
     }
-    const state = states[this._state];
     const startExpr = this._exprStr;
     this._token = token;
     this._exprStr += token.raw;
-    if (state.subHandler) {
+    const { tokens, subHandler } = this._state;
+    if (subHandler) {
       if (!this._subParser) this._startSubExp(startExpr);
       const stopState = this._subParser!.addToken(token);
-      if (stopState) {
+      if (stopState != null) {
         this._endSubExp();
         if (this._parentStop) return stopState;
-        this._state = stopState;
+        this._stateType = stopState;
       }
-    } else if (state.tokenTypes && state.tokenTypes[token.type]) {
-      const tokenType = state.tokenTypes[token.type]!;
-      if (tokenType.handler) tokenType.handler.call(this, token);
-      if (tokenType.toState) this._state = tokenType.toState;
-    } else if (this._stopMap[token.type]) {
-      return this._stopMap[token.type];
+    } else if (tokens && tokens[token.type]) {
+      const { handler, toState } = tokens[token.type]!;
+      if (handler) handler.call(this, token);
+      if (toState != null) this._stateType = toState;
+    } else if (this._endTokens[token.type]) {
+      return this._endTokens[token.type];
     } else {
-      this._assert(false);
+      this.assert(false);
     }
   }
 
@@ -109,16 +113,16 @@ export class Parser {
    *      the expression, indicating that the expression is incomplete
    */
   complete(): AstNode | undefined {
-    if (this._cursor && !states[this._state].completable) {
+    if (this._cursor && !this._state.completable) {
       throw new Error(`Unexpected end of expression: ${this._exprStr}`);
     }
     if (this._subParser) this._endSubExp();
-    this._state = 'complete';
-    if (this._lambda) {
-      Object.defineProperty(this._tree, '_lambda', { value: true, writable: true });
+    this._stateType = StateType.complete;
+    if (this._lambda && this._tree) {
+      set(this._tree, '_lambda', true);
     }
     return this._tree && this._defs.length
-      ? { type: 'Def', defs: this._defs, statement: this._tree }
+      ? { type: AstNodeType.Def, defs: this._defs, statement: this._tree }
       : this._tree;
   }
 
@@ -128,26 +132,14 @@ export class Parser {
    * handles setting the parent of the new node.
    * @param node A node to be added to the AST
    */
-  _placeAtCursor(node: AstNode) {
+  placeAtCursor(node: AstNode) {
     if (!this._cursor) {
       this._tree = node;
     } else {
       (this._cursor as BinaryNode | UnaryNode | MemberNode).right = node;
-      this._setParent(node, this._cursor);
+      set(node, '_parent', this._cursor);
     }
     this._cursor = node;
-  }
-
-  /**
-   * Sets the parent of a node by creating a non-enumerable _parent property
-   * that points to the supplied parent argument.
-   * @param node A node of the AST on which to set a new
-   *      parent
-   * @param [parent] An existing node of the AST to serve as the
-   *      parent of the new node
-   */
-  _setParent(node: AstNode, parent?: AstNode) {
-    Object.defineProperty(node, '_parent', { value: parent, writable: true });
   }
 
   /**
@@ -157,9 +149,9 @@ export class Parser {
    * contains a pointer to what's at the cursor currently.
    * @param node A node to be added to the AST
    */
-  _placeBeforeCursor(node: AstNode) {
+  placeBeforeCursor(node: AstNode) {
     this._cursor = this._cursor!._parent;
-    this._placeAtCursor(node);
+    this.placeAtCursor(node);
   }
 
   /**
@@ -167,23 +159,23 @@ export class Parser {
    * subParser.
    * @param {string} [exprStr] The expression string to prefix to the new Parser
    */
-  _startSubExp(exprStr: string) {
-    let endStates = states[this._state].endStates;
-    if (!endStates) {
+  private _startSubExp(exprStr: string) {
+    let endTokens = this._state.endTokens;
+    if (!endTokens) {
       this._parentStop = true;
-      endStates = this._stopMap;
+      endTokens = this._endTokens;
     }
-    this._subParser = new Parser(this._grammar, exprStr, endStates);
+    this._subParser = new Parser(this._grammar, exprStr, endTokens);
   }
 
   /**
    * Ends a subexpression by completing the subParser and passing its result
    * to the subHandler configured in the current state.
    */
-  _endSubExp() {
+  private _endSubExp() {
     const ast = this._subParser!.complete();
     if (ast && ast._lambda) this._lambda = true;
-    states[this._state].subHandler!.call(this, ast);
+    this._state.subHandler!.call(this, ast);
     this._subParser = undefined;
   }
 
@@ -192,7 +184,7 @@ export class Parser {
    * @param {number} priority target priority
    * @param {boolean} [rtl] the new operator associativity
    */
-  _rotatePriority(priority: number, rtl?: boolean) {
+  rotatePriority(priority: number, rtl?: boolean) {
     let parent = this._cursor && this._cursor._parent;
     while (parent) {
       const parentPriority = this._getPriority(parent);
@@ -205,36 +197,27 @@ export class Parser {
   /**
    * Get the priority of a Binary or Unary
    */
-  _getPriority(ast: AstNode) {
-    if (ast.type === 'Binary') {
-      return this._grammar.binaryOps[ast.operator].priority;
+  private _getPriority(ast: AstNode) {
+    const { binaryOps, unaryOps } = this._grammar;
+    if (ast.type === AstNodeType.Binary) {
+      return binaryOps[ast.operator].priority;
     }
-    if (ast.type === 'Unary') {
-      return this._grammar.unaryOps[ast.operator].priority;
+    if (ast.type === AstNodeType.Unary) {
+      return unaryOps[ast.operator].priority;
     }
-    if (ast.type === 'Member') {
+    if (ast.type === AstNodeType.Member) {
       return MEMBER_PRIORITY;
     }
     /* istanbul ignore next */
     return 0;
   }
 
-  /**
-   * Convert an AstNode to a Lambda node if it can be a Lambda (contain symbol `@`).
-   * @param ast the input AstNode
-   * @return ast Return a new Lambda node if the AstNode can be a Lambda,
-   * otherwise return the original node.
-   */
-  _maybeLambda(ast: AstNode) {
-    return ast._lambda ? { type: 'Lambda', expr: ast } as LambdaNode : ast;
-  }
-
-  _leftOptional(ast: OptionalBase) {
+  leftOptional(ast: OptionalBase) {
     const left = this._cursor as OptionalBase;
     if (left.optional || left.leftOptional) ast.leftOptional = true;
   }
 
-  _assert(condition: unknown): asserts condition {
+  assert(condition: unknown): asserts condition {
     if (!condition) {
       throw new Error(
         `Token ${this._token?.raw} unexpected in expression: ${this._exprStr}`,

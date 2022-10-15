@@ -1,4 +1,5 @@
 import type { Grammar } from './types';
+import { TokenType } from './types';
 
 /**
  * priority:
@@ -25,23 +26,23 @@ export const FUNCTION_CALL_PRIORITY = 100;
  */
 export const getGrammar = (): Grammar => ({
   symbols: {
-    '[': { type: 'openBracket' },
-    '?.[': { type: 'optionalBracket' },
-    ']': { type: 'closeBracket' },
-    '|': { type: 'pipe' },
-    '{': { type: 'openCurly' },
-    '}': { type: 'closeCurly' },
-    '.': { type: 'dot' },
-    '?.': { type: 'optionalDot' },
-    ':': { type: 'colon' },
-    ',': { type: 'comma' },
-    '(': { type: 'openParen' },
-    '?.(': { type: 'optionalParen' },
-    ')': { type: 'closeParen' },
-    '?': { type: 'question' },
-    'def': { type: 'def' },
-    '=': { type: 'assign' },
-    ';': { type: 'semi' },
+    '[': { type: TokenType.openBracket },
+    '?.[': { type: TokenType.optionalBracket },
+    ']': { type: TokenType.closeBracket },
+    '|': { type: TokenType.pipe },
+    '{': { type: TokenType.openCurly },
+    '}': { type: TokenType.closeCurly },
+    '.': { type: TokenType.dot },
+    '?.': { type: TokenType.optionalDot },
+    ':': { type: TokenType.colon },
+    ',': { type: TokenType.comma },
+    '(': { type: TokenType.openParen },
+    '?.(': { type: TokenType.optionalParen },
+    ')': { type: TokenType.closeParen },
+    '?': { type: TokenType.question },
+    'def': { type: TokenType.def },
+    '=': { type: TokenType.assign },
+    ';': { type: TokenType.semi },
   },
   binaryOps: {
     '+': {

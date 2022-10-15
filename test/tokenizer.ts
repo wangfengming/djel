@@ -1,103 +1,105 @@
 import { expect } from 'chai';
 import { getGrammar } from '../src/grammar';
 import { Tokenizer } from '../src/tokenizer';
+import { TokenType } from '../src/types';
 
 describe('tokenizer', () => {
-  let tokenizer: ReturnType<typeof Tokenizer>;
-  beforeEach(() => {
+  const tokenize = (exp: string) => {
     const grammar = getGrammar();
-    tokenizer = Tokenizer(grammar);
-  });
+    const tokenizer = Tokenizer(grammar);
+    const tokens = tokenizer.tokenize(exp);
+    return tokens;
+  };
 
   it('symbol', () => {
-    expect(tokenizer.tokenize(';[]{}:,()? . ?. ?.[ ?.(def=')).to.deep.equal([
-      { type: 'semi', value: ';', raw: ';' },
-      { type: 'openBracket', value: '[', raw: '[' },
-      { type: 'closeBracket', value: ']', raw: ']' },
-      { type: 'openCurly', value: '{', raw: '{' },
-      { type: 'closeCurly', value: '}', raw: '}' },
-      { type: 'colon', value: ':', raw: ':' },
-      { type: 'comma', value: ',', raw: ',' },
-      { type: 'openParen', value: '(', raw: '(' },
-      { type: 'closeParen', value: ')', raw: ')' },
-      { type: 'question', value: '?', raw: '? ' },
-      { type: 'dot', value: '.', raw: '. ' },
-      { type: 'optionalDot', value: '?.', raw: '?. ' },
-      { type: 'optionalBracket', value: '?.[', raw: '?.[ ' },
-      { type: 'optionalParen', value: '?.(', raw: '?.(' },
-      { type: 'def', value: 'def', raw: 'def' },
-      { type: 'assign', value: '=', raw: '=' },
+    expect(tokenize(';[]{}:,()? . ?. ?.[ ?.(def=')).to.deep.equal([
+      { type: TokenType.semi, value: ';', raw: ';' },
+      { type: TokenType.openBracket, value: '[', raw: '[' },
+      { type: TokenType.closeBracket, value: ']', raw: ']' },
+      { type: TokenType.openCurly, value: '{', raw: '{' },
+      { type: TokenType.closeCurly, value: '}', raw: '}' },
+      { type: TokenType.colon, value: ':', raw: ':' },
+      { type: TokenType.comma, value: ',', raw: ',' },
+      { type: TokenType.openParen, value: '(', raw: '(' },
+      { type: TokenType.closeParen, value: ')', raw: ')' },
+      { type: TokenType.question, value: '?', raw: '? ' },
+      { type: TokenType.dot, value: '.', raw: '. ' },
+      { type: TokenType.optionalDot, value: '?.', raw: '?. ' },
+      { type: TokenType.optionalBracket, value: '?.[', raw: '?.[ ' },
+      { type: TokenType.optionalParen, value: '?.(', raw: '?.(' },
+      { type: TokenType.def, value: 'def', raw: 'def' },
+      { type: TokenType.assign, value: '=', raw: '=' },
     ]);
   });
   it('binaryOp', () => {
-    const tokens = tokenizer.tokenize('1 + 1 - 1 * / // % ^ == != > >= < <= && || in');
+    const tokens = tokenize('1 + 1 - 1 * / // % ^ == != > >= < <= && || in');
     expect(tokens).to.deep.equal([
-      { type: 'literal', value: '1', raw: '1 ', literal: 1 },
-      { type: 'binaryOp', value: '+', raw: '+ ' },
-      { type: 'literal', value: '1', raw: '1 ', literal: 1 },
-      { type: 'binaryOp', value: '-', raw: '- ' },
-      { type: 'literal', value: '1', raw: '1 ', literal: 1 },
-      { type: 'binaryOp', value: '*', raw: '* ' },
-      { type: 'binaryOp', value: '/', raw: '/ ' },
-      { type: 'binaryOp', value: '//', raw: '// ' },
-      { type: 'binaryOp', value: '%', raw: '% ' },
-      { type: 'binaryOp', value: '^', raw: '^ ' },
-      { type: 'binaryOp', value: '==', raw: '== ' },
-      { type: 'binaryOp', value: '!=', raw: '!= ' },
-      { type: 'binaryOp', value: '>', raw: '> ' },
-      { type: 'binaryOp', value: '>=', raw: '>= ' },
-      { type: 'binaryOp', value: '<', raw: '< ' },
-      { type: 'binaryOp', value: '<=', raw: '<= ' },
-      { type: 'binaryOp', value: '&&', raw: '&& ' },
-      { type: 'binaryOp', value: '||', raw: '|| ' },
-      { type: 'binaryOp', value: 'in', raw: 'in' },
+      { type: TokenType.literal, value: '1', raw: '1 ', literal: 1 },
+      { type: TokenType.binaryOp, value: '+', raw: '+ ' },
+      { type: TokenType.literal, value: '1', raw: '1 ', literal: 1 },
+      { type: TokenType.binaryOp, value: '-', raw: '- ' },
+      { type: TokenType.literal, value: '1', raw: '1 ', literal: 1 },
+      { type: TokenType.binaryOp, value: '*', raw: '* ' },
+      { type: TokenType.binaryOp, value: '/', raw: '/ ' },
+      { type: TokenType.binaryOp, value: '//', raw: '// ' },
+      { type: TokenType.binaryOp, value: '%', raw: '% ' },
+      { type: TokenType.binaryOp, value: '^', raw: '^ ' },
+      { type: TokenType.binaryOp, value: '==', raw: '== ' },
+      { type: TokenType.binaryOp, value: '!=', raw: '!= ' },
+      { type: TokenType.binaryOp, value: '>', raw: '> ' },
+      { type: TokenType.binaryOp, value: '>=', raw: '>= ' },
+      { type: TokenType.binaryOp, value: '<', raw: '< ' },
+      { type: TokenType.binaryOp, value: '<=', raw: '<= ' },
+      { type: TokenType.binaryOp, value: '&&', raw: '&& ' },
+      { type: TokenType.binaryOp, value: '||', raw: '|| ' },
+      { type: TokenType.binaryOp, value: 'in', raw: 'in' },
     ]);
   });
   it('unaryOp', () => {
-    expect(tokenizer.tokenize('- ! +')).to.deep.equal([
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'unaryOp', value: '!', raw: '! ' },
-      { type: 'unaryOp', value: '+', raw: '+' },
+    expect(tokenize('- ! +')).to.deep.equal([
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.unaryOp, value: '!', raw: '! ' },
+      { type: TokenType.unaryOp, value: '+', raw: '+' },
     ]);
-    expect(tokenizer.tokenize('-1?+2:!3')).to.deep.equal([
-      { type: 'unaryOp', value: '-', raw: '-' },
-      { type: 'literal', value: '1', raw: '1', literal: 1 },
-      { type: 'question', value: '?', raw: '?' },
-      { type: 'unaryOp', value: '+', raw: '+' },
-      { type: 'literal', value: '2', raw: '2', literal: 2 },
-      { type: 'colon', value: ':', raw: ':' },
-      { type: 'unaryOp', value: '!', raw: '!' },
-      { type: 'literal', value: '3', raw: '3', literal: 3 },
+    expect(tokenize('-1?+2:!3')).to.deep.equal([
+      { type: TokenType.unaryOp, value: '-', raw: '-' },
+      { type: TokenType.literal, value: '1', raw: '1', literal: 1 },
+      { type: TokenType.question, value: '?', raw: '?' },
+      { type: TokenType.unaryOp, value: '+', raw: '+' },
+      { type: TokenType.literal, value: '2', raw: '2', literal: 2 },
+      { type: TokenType.colon, value: ':', raw: ':' },
+      { type: TokenType.unaryOp, value: '!', raw: '!' },
+      { type: TokenType.literal, value: '3', raw: '3', literal: 3 },
     ]);
   });
   it('prefer unaryOp', () => {
-    expect(tokenizer.tokenize('- [ - ( - * - ( + - ? - : - , - = - ; -')).to.deep.equal([
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'openBracket', value: '[', raw: '[ ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'openParen', value: '(', raw: '( ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'binaryOp', value: '*', raw: '* ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'openParen', value: '(', raw: '( ' },
-      { type: 'unaryOp', value: '+', raw: '+ ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'question', value: '?', raw: '? ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'colon', value: ':', raw: ': ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'comma', value: ',', raw: ', ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'assign', value: '=', raw: '= ' },
-      { type: 'unaryOp', value: '-', raw: '- ' },
-      { type: 'semi', value: ';', raw: '; ' },
-      { type: 'unaryOp', value: '-', raw: '-' },
+    expect(tokenize('- [ - ( - * - ( + - ? - : - , - = - ; -')).to.deep.equal([
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.openBracket, value: '[', raw: '[ ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.openParen, value: '(', raw: '( ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.binaryOp, value: '*', raw: '* ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.openParen, value: '(', raw: '( ' },
+      { type: TokenType.unaryOp, value: '+', raw: '+ ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.question, value: '?', raw: '? ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.colon, value: ':', raw: ': ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.comma, value: ',', raw: ', ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.assign, value: '=', raw: '= ' },
+      { type: TokenType.unaryOp, value: '-', raw: '- ' },
+      { type: TokenType.semi, value: ';', raw: '; ' },
+      { type: TokenType.unaryOp, value: '-', raw: '-' },
     ]);
   });
   it('string', () => {
-    expect(tokenizer.tokenize('"foo \\"bar\\\\"')).to.deep.equal([
+    expect(tokenize('"foo \\"bar\\\\"')).to.deep.equal([
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: '"foo \\"bar\\\\"',
         raw: '"foo \\"bar\\\\"',
         literal: 'foo "bar\\',
@@ -105,15 +107,15 @@ describe('tokenizer', () => {
     ]);
   });
   it('boolean', () => {
-    expect(tokenizer.tokenize('true false')).to.deep.equal([
+    expect(tokenize('true false')).to.deep.equal([
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: 'true',
         raw: 'true ',
         literal: true,
       },
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: 'false',
         raw: 'false',
         literal: false,
@@ -121,20 +123,20 @@ describe('tokenizer', () => {
     ]);
   });
   it('number', () => {
-    expect(tokenizer.tokenize('-7.6 20')).to.deep.equal([
+    expect(tokenize('-7.6 20')).to.deep.equal([
       {
-        type: 'unaryOp',
+        type: TokenType.unaryOp,
         value: '-',
         raw: '-',
       },
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: '7.6',
         raw: '7.6 ',
         literal: 7.6,
       },
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: '20',
         raw: '20',
         literal: 20,
@@ -142,9 +144,9 @@ describe('tokenizer', () => {
     ]);
   });
   it('null', () => {
-    expect(tokenizer.tokenize('null')).to.deep.equal([
+    expect(tokenize('null')).to.deep.equal([
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: 'null',
         raw: 'null',
         literal: null,
@@ -152,40 +154,40 @@ describe('tokenizer', () => {
     ]);
   });
   it('identifier', () => {
-    expect(tokenizer.tokenize('_foo9_bar')).to.deep.equal([
+    expect(tokenize('_foo9_bar')).to.deep.equal([
       {
-        type: 'identifier',
+        type: TokenType.identifier,
         value: '_foo9_bar',
         raw: '_foo9_bar',
       },
     ]);
   });
   it('full expression', () => {
-    const tokens = tokenizer.tokenize('6+x -  -17.55*y<= !foo.bar["baz\\"foz"]|filter(@3>@)');
+    const tokens = tokenize('6+x -  -17.55*y<= !foo.bar["baz\\"foz"]|filter(@3>@)');
     expect(tokens).to.deep.equal([
-      { type: 'literal', value: '6', raw: '6', literal: 6 },
-      { type: 'binaryOp', value: '+', raw: '+' },
-      { type: 'identifier', value: 'x', raw: 'x ' },
-      { type: 'binaryOp', value: '-', raw: '-  ' },
-      { type: 'unaryOp', value: '-', raw: '-' },
-      { type: 'literal', value: '17.55', raw: '17.55', literal: 17.55 },
-      { type: 'binaryOp', value: '*', raw: '*' },
-      { type: 'identifier', value: 'y', raw: 'y' },
-      { type: 'binaryOp', value: '<=', raw: '<= ' },
-      { type: 'unaryOp', value: '!', raw: '!' },
-      { type: 'identifier', value: 'foo', raw: 'foo' },
-      { type: 'dot', value: '.', raw: '.' },
-      { type: 'identifier', value: 'bar', raw: 'bar' },
-      { type: 'openBracket', value: '[', raw: '[' },
-      { type: 'literal', value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },
-      { type: 'closeBracket', value: ']', raw: ']' },
-      { type: 'pipe', value: '|', raw: '|' },
-      { type: 'identifier', value: 'filter', raw: 'filter' },
-      { type: 'openParen', value: '(', raw: '(' },
-      { type: 'identifier', value: '@3', raw: '@3', argIndex: 3 },
-      { type: 'binaryOp', value: '>', raw: '>' },
-      { type: 'identifier', value: '@', raw: '@', argIndex: 0 },
-      { type: 'closeParen', value: ')', raw: ')' },
+      { type: TokenType.literal, value: '6', raw: '6', literal: 6 },
+      { type: TokenType.binaryOp, value: '+', raw: '+' },
+      { type: TokenType.identifier, value: 'x', raw: 'x ' },
+      { type: TokenType.binaryOp, value: '-', raw: '-  ' },
+      { type: TokenType.unaryOp, value: '-', raw: '-' },
+      { type: TokenType.literal, value: '17.55', raw: '17.55', literal: 17.55 },
+      { type: TokenType.binaryOp, value: '*', raw: '*' },
+      { type: TokenType.identifier, value: 'y', raw: 'y' },
+      { type: TokenType.binaryOp, value: '<=', raw: '<= ' },
+      { type: TokenType.unaryOp, value: '!', raw: '!' },
+      { type: TokenType.identifier, value: 'foo', raw: 'foo' },
+      { type: TokenType.dot, value: '.', raw: '.' },
+      { type: TokenType.identifier, value: 'bar', raw: 'bar' },
+      { type: TokenType.openBracket, value: '[', raw: '[' },
+      { type: TokenType.literal, value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },
+      { type: TokenType.closeBracket, value: ']', raw: ']' },
+      { type: TokenType.pipe, value: '|', raw: '|' },
+      { type: TokenType.identifier, value: 'filter', raw: 'filter' },
+      { type: TokenType.openParen, value: '(', raw: '(' },
+      { type: TokenType.identifier, value: '@3', raw: '@3', argIndex: 3 },
+      { type: TokenType.binaryOp, value: '>', raw: '>' },
+      { type: TokenType.identifier, value: '@', raw: '@', argIndex: 0 },
+      { type: TokenType.closeParen, value: ')', raw: ')' },
     ]);
   });
   it('full expression with comments', () => {
@@ -195,29 +197,29 @@ describe('tokenizer', () => {
       '&& b=="not a #comment" # is a comment',
       '# comment # 2nd comment',
     ].join('\n');
-    const tokens = tokenizer.tokenize(expression);
+    const tokens = tokenize(expression);
     expect(tokens).to.deep.equal([
-      { type: 'literal', value: '6', raw: '6', literal: 6 },
-      { type: 'binaryOp', value: '+', raw: '+' },
-      { type: 'identifier', value: 'x', raw: 'x ' },
-      { type: 'binaryOp', value: '-', raw: '-  ' },
-      { type: 'unaryOp', value: '-', raw: '-' },
-      { type: 'literal', value: '17.55', raw: '17.55', literal: 17.55 },
-      { type: 'binaryOp', value: '*', raw: '*' },
-      { type: 'identifier', value: 'y', raw: 'y ' },
-      { type: 'binaryOp', value: '<=', raw: '<= ' },
-      { type: 'unaryOp', value: '!', raw: '!' },
-      { type: 'identifier', value: 'foo', raw: 'foo' },
-      { type: 'dot', value: '.', raw: '.' },
-      { type: 'identifier', value: 'bar', raw: 'bar' },
-      { type: 'openBracket', value: '[', raw: '[' },
-      { type: 'literal', value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },
-      { type: 'closeBracket', value: ']', raw: '] ' },
-      { type: 'binaryOp', value: '&&', raw: '&& ' },
-      { type: 'identifier', value: 'b', raw: 'b' },
-      { type: 'binaryOp', value: '==', raw: '==' },
+      { type: TokenType.literal, value: '6', raw: '6', literal: 6 },
+      { type: TokenType.binaryOp, value: '+', raw: '+' },
+      { type: TokenType.identifier, value: 'x', raw: 'x ' },
+      { type: TokenType.binaryOp, value: '-', raw: '-  ' },
+      { type: TokenType.unaryOp, value: '-', raw: '-' },
+      { type: TokenType.literal, value: '17.55', raw: '17.55', literal: 17.55 },
+      { type: TokenType.binaryOp, value: '*', raw: '*' },
+      { type: TokenType.identifier, value: 'y', raw: 'y ' },
+      { type: TokenType.binaryOp, value: '<=', raw: '<= ' },
+      { type: TokenType.unaryOp, value: '!', raw: '!' },
+      { type: TokenType.identifier, value: 'foo', raw: 'foo' },
+      { type: TokenType.dot, value: '.', raw: '.' },
+      { type: TokenType.identifier, value: 'bar', raw: 'bar' },
+      { type: TokenType.openBracket, value: '[', raw: '[' },
+      { type: TokenType.literal, value: '"baz\\"foz"', raw: '"baz\\"foz"', literal: 'baz"foz' },
+      { type: TokenType.closeBracket, value: ']', raw: '] ' },
+      { type: TokenType.binaryOp, value: '&&', raw: '&& ' },
+      { type: TokenType.identifier, value: 'b', raw: 'b' },
+      { type: TokenType.binaryOp, value: '==', raw: '==' },
       {
-        type: 'literal',
+        type: TokenType.literal,
         value: '"not a #comment"',
         raw: '"not a #comment" ',
         literal: 'not a #comment',
@@ -225,16 +227,16 @@ describe('tokenizer', () => {
     ]);
   });
   it('ignore the end semi', () => {
-    const tokens = tokenizer.tokenize('def a = 1;');
+    const tokens = tokenize('def a = 1;');
     expect(tokens).to.deep.equal([
-      { type: 'def', value: 'def', raw: 'def ' },
-      { type: 'identifier', value: 'a', raw: 'a ' },
-      { type: 'assign', value: '=', raw: '= ' },
-      { type: 'literal', value: '1', raw: '1', literal: 1 },
+      { type: TokenType.def, value: 'def', raw: 'def ' },
+      { type: TokenType.identifier, value: 'a', raw: 'a ' },
+      { type: TokenType.assign, value: '=', raw: '= ' },
+      { type: TokenType.literal, value: '1', raw: '1', literal: 1 },
     ]);
   });
   it('throw for invalid token', () => {
-    expect(() => tokenizer.tokenize('~')).to
+    expect(() => tokenize('~')).to
       .throw('Invalid expression token: ~');
   });
 });

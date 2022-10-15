@@ -21,10 +21,9 @@ describe('Djel', () => {
   });
   it('should allow transforms to be defined', () => {
     djel.addTransforms({
-      toCase: (val: string, args: { case: 'upper' | 'lower' }) => {
-        if (args.case === 'upper') return val.toUpperCase();
-        return val.toLowerCase();
-      },
+      toCase: (val: string, args: { case: 'upper' | 'lower' }) => (args.case === 'upper'
+        ? val.toUpperCase()
+        : val.toLowerCase()),
     });
     expect(djel.evaluate('"hello"|toCase({case:"upper"})')).to.equal('HELLO');
   });

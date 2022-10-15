@@ -1,6 +1,8 @@
 import type { Grammar, Token } from './types';
+import { TokenType } from './types';
+import { last } from './utils';
 
-const ID_REGEX = /^[a-zA-Z_$][a-zA-Z\d_$]*$|^@\d?$/;
+const ID_REGEX = /[a-zA-Z_$][a-zA-Z\d_$]*|@\d?/;
 
 /**
  * Tokenizer is a collection of stateless, statically-accessed functions for the
@@ -50,7 +52,7 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
     }
     const elements = str.split(_regexp).filter((i) => i);
     const tokens = getTokens(elements, _grammar);
-    if (tokens.length && tokens[tokens.length - 1].type === 'semi') {
+    if (tokens.length && last(tokens).type === TokenType.semi) {
       tokens.pop();
     }
     return tokens;
@@ -86,10 +88,11 @@ function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
 
   elements.forEach((element) => {
     if (/^\s*$/.test(element)) { // is whitespace
-      if (tokens.length) tokens[tokens.length - 1].raw += element;
+      if (tokens.length) last(tokens).raw += element;
     } else if (!element.startsWith('#')) {
       // # is comment
-      const token = createToken(element, grammar, isPreferUnaryOp(tokens));
+      const isPreferUnaryOp = checkIsPreferUnaryOp(tokens);
+      const token = createToken(element, grammar, isPreferUnaryOp);
       tokens.push(token);
     }
   });
@@ -108,10 +111,12 @@ function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
  */
 function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, preferUnaryOp: boolean) {
   const token: Token = {
-    type: 'literal',
+    type: TokenType.literal,
     value: element,
     raw: element,
   };
+
+  const { symbols, binaryOps, unaryOps } = grammar;
 
   if (element[0] == '"' || element[0] == '\'') {
     token.literal = unquote(element);
@@ -123,16 +128,16 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
     token.literal = false;
   } else if (element === 'null') {
     token.literal = null;
-  } else if (grammar.symbols[element]) {
-    token.type = grammar.symbols[element].type;
-  } else if (grammar.binaryOps[element] && grammar.unaryOps[element]) {
-    token.type = preferUnaryOp ? 'unaryOp' : 'binaryOp';
-  } else if (grammar.binaryOps[element]) {
-    token.type = 'binaryOp';
-  } else if (grammar.unaryOps[element]) {
-    token.type = 'unaryOp';
+  } else if (symbols[element]) {
+    token.type = symbols[element].type;
+  } else if (binaryOps[element] && unaryOps[element]) {
+    token.type = preferUnaryOp ? TokenType.unaryOp : TokenType.binaryOp;
+  } else if (binaryOps[element]) {
+    token.type = TokenType.binaryOp;
+  } else if (unaryOps[element]) {
+    token.type = TokenType.unaryOp;
   } else if (element.match(ID_REGEX)) {
-    token.type = 'identifier';
+    token.type = TokenType.identifier;
     const match = element.match(/^@(\d?)$/);
     if (match) {
       token.argIndex = +match[1] || 0;
@@ -150,18 +155,18 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
  * @param tokens the tokens already processed.
  * @returns {boolean} true if the token should be interpreted as a unary operator.
  */
-function isPreferUnaryOp(tokens: Token[]) {
+function checkIsPreferUnaryOp(tokens: Token[]) {
   if (!tokens.length) return true;
-  const lastType = tokens[tokens.length - 1].type;
-  return 'openBracket' == lastType
-    || 'openParen' == lastType
-    || 'binaryOp' == lastType
-    || 'unaryOp' == lastType
-    || 'question' == lastType
-    || 'colon' == lastType
-    || 'comma' == lastType
-    || 'assign' == lastType
-    || 'semi' == lastType;
+  const lastType = last(tokens).type;
+  return TokenType.openBracket === lastType
+    || TokenType.openParen === lastType
+    || TokenType.binaryOp === lastType
+    || TokenType.unaryOp === lastType
+    || TokenType.question === lastType
+    || TokenType.colon === lastType
+    || TokenType.comma === lastType
+    || TokenType.assign === lastType
+    || TokenType.semi === lastType;
 }
 
 /**
@@ -205,14 +210,12 @@ function createRegexp(tokenNames: string[]) {
   ];
   const postOpRegexElems = [
     // Identifiers
-    /[a-zA-Z_$][a-zA-Z\d_$]*|@\d?/.source,
+    ID_REGEX.source,
     // Numerics (without negative symbol)
     /\d*\.\d+|\d+/.source,
   ];
 
-  const _tokenNames = tokenNames
-    .sort((a, b) => b.length - a.length)
-    .map((item) => escapeRegExp(item));
+  const _tokenNames = tokenNames.sort((a, b) => b.length - a.length).map(escapeRegExp);
 
   const regexp = new RegExp(
     `(${preOpRegexElems.concat(_tokenNames).concat(postOpRegexElems).join('|')})`,
@@ -230,6 +233,6 @@ function createRegexp(tokenNames: string[]) {
  */
 function escapeRegExp(str: string) {
   let result = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (result.match(ID_REGEX)) result = '\\b' + result + '\\b';
+  if (result.match(/^[a-zA-Z_$][a-zA-Z\d_$]*$/)) result = '\\b' + result + '\\b';
   return result;
 }

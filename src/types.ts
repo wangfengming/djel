@@ -1,26 +1,7 @@
 import type { Parser } from './parser';
 
-export type SymbolType =
-  | 'openBracket'
-  | 'optionalBracket'
-  | 'closeBracket'
-  | 'openCurly'
-  | 'closeCurly'
-  | 'openParen'
-  | 'optionalParen'
-  | 'closeParen'
-  | 'dot'
-  | 'optionalDot'
-  | 'colon'
-  | 'comma'
-  | 'question'
-  | 'pipe'
-  | 'def'
-  | 'assign'
-  | 'semi';
-
 export interface SymbolGrammar {
-  type: SymbolType;
+  type: TokenType;
 }
 
 export interface BinaryOpGrammar {
@@ -49,13 +30,6 @@ export interface Grammar {
   transforms: Record<string, Function>;
 }
 
-export type TokenType =
-  | SymbolType
-  | 'binaryOp'
-  | 'unaryOp'
-  | 'identifier'
-  | 'literal';
-
 export interface Token {
   type: TokenType;
   value: string;
@@ -64,6 +38,30 @@ export interface Token {
   literal?: string | number | boolean | null;
   // for arguments identifier
   argIndex?: number;
+}
+
+export const enum TokenType {
+  openBracket = 1,
+  optionalBracket,
+  closeBracket,
+  openCurly,
+  closeCurly,
+  openParen,
+  optionalParen,
+  closeParen,
+  dot,
+  optionalDot,
+  colon,
+  comma,
+  question,
+  pipe,
+  def,
+  assign,
+  semi,
+  binaryOp,
+  unaryOp,
+  identifier,
+  literal,
 }
 
 export type AstNode =
@@ -85,39 +83,40 @@ interface AstNodeBase {
   _lambda?: boolean;
 }
 
-export type AstNodeType =
-  | 'Literal'
-  | 'Identifier'
-  | 'Binary'
-  | 'Unary'
-  | 'Member'
-  | 'Object'
-  | 'Array'
-  | 'Conditional'
-  | 'FunctionCall'
-  | 'Lambda'
-  | 'Def'
+export const enum AstNodeType {
+  Literal = 1,
+  Identifier,
+  Binary,
+  Unary,
+  Member,
+  Object,
+  Array,
+  Conditional,
+  FunctionCall,
+  Lambda,
+  Def,
+}
 
 export interface LiteralNode extends AstNodeBase {
-  type: 'Literal';
+  type: AstNodeType.Literal;
   value: string | number | boolean;
 }
 
 export interface IdentifierNode extends AstNodeBase {
-  type: 'Identifier';
+  type: AstNodeType.Identifier;
   value: string;
   argIndex?: number;
 }
 
 export interface BinaryNode extends AstNodeBase {
-  type: 'Binary';
+  type: AstNodeType.Binary;
   operator: string;
   left: AstNode;
   right: AstNode;
 }
 
 export interface UnaryNode extends AstNodeBase {
-  type: 'Unary';
+  type: AstNodeType.Unary;
   operator: string;
   right: AstNode;
 }
@@ -128,14 +127,14 @@ export interface OptionalBase {
 }
 
 export interface MemberNode extends AstNodeBase, OptionalBase {
-  type: 'Member';
+  type: AstNodeType.Member;
   computed?: boolean;
   left: AstNode;
   right: AstNode;
 }
 
 export interface ObjectNode extends AstNodeBase {
-  type: 'Object';
+  type: AstNodeType.Object;
   entries: ObjectEntry[];
 }
 
@@ -145,30 +144,30 @@ export interface ObjectEntry {
 }
 
 export interface ArrayNode extends AstNodeBase {
-  type: 'Array';
+  type: AstNodeType.Array;
   value: AstNode[];
 }
 
 export interface ConditionalNode extends AstNodeBase {
-  type: 'Conditional';
+  type: AstNodeType.Conditional;
   test: AstNode;
   consequent?: AstNode;
   alternate: AstNode;
 }
 
 export interface FunctionCallNode extends AstNodeBase, OptionalBase {
-  type: 'FunctionCall';
+  type: AstNodeType.FunctionCall;
   func: AstNode;
   args: AstNode[];
 }
 
 export interface LambdaNode extends AstNodeBase {
-  type: 'Lambda';
+  type: AstNodeType.Lambda;
   expr: AstNode;
 }
 
 export interface DefNode extends AstNodeBase {
-  type: 'Def',
+  type: AstNodeType.Def,
   defs: Def[];
   statement: AstNode;
 }
@@ -178,33 +177,34 @@ export interface Def {
   value: AstNode;
 }
 
-export type StateType =
-  | 'expectOperand'
-  | 'expectBinOp'
-  | 'expectObjKey'
-  | 'expectKeyValSep'
-  | 'computedMember'
-  | 'member'
-  | 'def'
-  | 'defAssign'
-  | 'defVal'
-  | 'expectTransform'
-  | 'postTransform'
-  | 'exprTransform'
-  | 'subExp'
-  | 'argVal'
-  | 'objKey'
-  | 'objVal'
-  | 'arrayVal'
-  | 'ternaryMid'
-  | 'ternaryEnd'
-  | 'complete';
+export const enum StateType {
+  expectOperand = 1,
+  expectBinOp,
+  expectObjKey,
+  expectKeyValSep,
+  computedMember,
+  member,
+  def,
+  defAssign,
+  defVal,
+  expectTransform,
+  postTransform,
+  exprTransform,
+  subExp,
+  argVal,
+  objKey,
+  objVal,
+  arrayVal,
+  ternaryMid,
+  ternaryEnd,
+  complete,
+}
 
 export interface State {
-  tokenTypes?: Partial<Record<TokenType, StateTypeOpts>>;
+  tokens?: Partial<Record<TokenType, StateTypeOpts>>;
   completable?: boolean;
   subHandler?: (this: Parser, ast?: AstNode) => void;
-  endStates?: Partial<Record<TokenType, StateType>>;
+  endTokens?: Partial<Record<TokenType, StateType>>;
 }
 
 export interface StateTypeOpts {

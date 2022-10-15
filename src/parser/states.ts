@@ -1,5 +1,31 @@
-import type { State, StateType } from '../types';
-import { handlers, subHandlers } from './handlers';
+import type { State } from '../types';
+import { StateType, TokenType } from '../types';
+import {
+  astArgVal,
+  astArrayVal,
+  astComputedMemberProperty,
+  astDefVal,
+  astExprTransform,
+  astObjKey,
+  astObjVal,
+  astSubExp,
+  astTernaryEnd,
+  astTernaryMid,
+  tokenArrayStart,
+  tokenBinaryOp,
+  tokenComputedMember,
+  tokenDefName,
+  tokenFunctionCall,
+  tokenIdentifier,
+  tokenLiteral,
+  tokenMember,
+  tokenMemberProperty,
+  tokenObjKey,
+  tokenObjStart,
+  tokenTernaryStart,
+  tokenTransform,
+  tokenUnaryOp,
+} from './handlers';
 
 /**
  * A mapping of all states in the finite state machine to a set of instructions
@@ -30,139 +56,139 @@ import { handlers, subHandlers } from './handlers';
  * in a thrown Error.
  */
 
-const expectBinOpTokenTypes: State['tokenTypes'] = {
-  binaryOp: { toState: 'expectOperand', handler: handlers.binaryOp },
-  openBracket: { toState: 'computedMember', handler: handlers.computedMember },
-  optionalBracket: { toState: 'computedMember', handler: handlers.computedMember },
-  dot: { toState: 'member', handler: handlers.member },
-  optionalDot: { toState: 'member', handler: handlers.member },
-  openParen: { toState: 'argVal', handler: handlers.functionCall },
-  optionalParen: { toState: 'argVal', handler: handlers.functionCall },
-  pipe: { toState: 'expectTransform' },
-  question: { toState: 'ternaryMid', handler: handlers.ternaryStart },
+const expectBinOpTokenTypes: State['tokens'] = {
+  [TokenType.binaryOp]: { toState: StateType.expectOperand, handler: tokenBinaryOp },
+  [TokenType.openBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
+  [TokenType.optionalBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
+  [TokenType.dot]: { toState: StateType.member, handler: tokenMember },
+  [TokenType.optionalDot]: { toState: StateType.member, handler: tokenMember },
+  [TokenType.openParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
+  [TokenType.optionalParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
+  [TokenType.pipe]: { toState: StateType.expectTransform },
+  [TokenType.question]: { toState: StateType.ternaryMid, handler: tokenTernaryStart },
 };
 
 export const states: Record<StateType, State> = {
-  expectOperand: {
-    tokenTypes: {
-      literal: { toState: 'expectBinOp', handler: handlers.literal },
-      identifier: { toState: 'expectBinOp', handler: handlers.identifier },
-      unaryOp: { handler: handlers.unaryOp },
-      openParen: { toState: 'subExp' },
-      openCurly: { toState: 'expectObjKey', handler: handlers.objStart },
-      openBracket: { toState: 'arrayVal', handler: handlers.arrayStart },
-      def: { toState: 'def' },
+  [StateType.expectOperand]: {
+    tokens: {
+      [TokenType.literal]: { toState: StateType.expectBinOp, handler: tokenLiteral },
+      [TokenType.identifier]: { toState: StateType.expectBinOp, handler: tokenIdentifier },
+      [TokenType.unaryOp]: { handler: tokenUnaryOp },
+      [TokenType.openParen]: { toState: StateType.subExp },
+      [TokenType.openCurly]: { toState: StateType.expectObjKey, handler: tokenObjStart },
+      [TokenType.openBracket]: { toState: StateType.arrayVal, handler: tokenArrayStart },
+      [TokenType.def]: { toState: StateType.def },
     },
   },
-  expectBinOp: {
-    tokenTypes: expectBinOpTokenTypes,
+  [StateType.expectBinOp]: {
+    tokens: expectBinOpTokenTypes,
     completable: true,
   },
-  member: {
-    tokenTypes: {
-      identifier: { toState: 'expectBinOp', handler: handlers.memberProperty },
+  [StateType.member]: {
+    tokens: {
+      [TokenType.identifier]: { toState: StateType.expectBinOp, handler: tokenMemberProperty },
     },
     completable: true,
   },
-  expectObjKey: {
-    tokenTypes: {
-      identifier: { toState: 'expectKeyValSep', handler: handlers.objKey },
-      literal: { toState: 'expectKeyValSep', handler: handlers.objKey },
-      openBracket: { toState: 'objKey' },
-      closeCurly: { toState: 'expectBinOp' },
+  [StateType.expectObjKey]: {
+    tokens: {
+      [TokenType.identifier]: { toState: StateType.expectKeyValSep, handler: tokenObjKey },
+      [TokenType.literal]: { toState: StateType.expectKeyValSep, handler: tokenObjKey },
+      [TokenType.openBracket]: { toState: StateType.objKey },
+      [TokenType.closeCurly]: { toState: StateType.expectBinOp },
     },
   },
-  expectKeyValSep: {
-    tokenTypes: {
-      colon: { toState: 'objVal' },
+  [StateType.expectKeyValSep]: {
+    tokens: {
+      [TokenType.colon]: { toState: StateType.objVal },
     },
   },
-  def: {
-    tokenTypes: {
-      identifier: { toState: 'defAssign', handler: handlers.defName },
+  [StateType.def]: {
+    tokens: {
+      [TokenType.identifier]: { toState: StateType.defAssign, handler: tokenDefName },
     },
   },
-  defAssign: {
-    tokenTypes: {
-      assign: { toState: 'defVal' },
+  [StateType.defAssign]: {
+    tokens: {
+      [TokenType.assign]: { toState: StateType.defVal },
     },
   },
-  expectTransform: {
-    tokenTypes: {
-      identifier: { toState: 'postTransform', handler: handlers.transform },
-      openParen: { toState: 'exprTransform', handler: handlers.transform },
+  [StateType.expectTransform]: {
+    tokens: {
+      [TokenType.identifier]: { toState: StateType.postTransform, handler: tokenTransform },
+      [TokenType.openParen]: { toState: StateType.exprTransform, handler: tokenTransform },
     },
   },
-  postTransform: {
-    tokenTypes: {
+  [StateType.postTransform]: {
+    tokens: {
       ...expectBinOpTokenTypes,
-      openParen: { toState: 'argVal' },
-      optionalParen: undefined,
+      [TokenType.openParen]: { toState: StateType.argVal },
+      [TokenType.optionalParen]: undefined,
     },
     completable: true,
   },
-  computedMember: {
-    subHandler: subHandlers.computedMemberProperty,
-    endStates: {
-      closeBracket: 'expectBinOp',
+  [StateType.computedMember]: {
+    subHandler: astComputedMemberProperty,
+    endTokens: {
+      [TokenType.closeBracket]: StateType.expectBinOp,
     },
   },
-  subExp: {
-    subHandler: subHandlers.subExp,
-    endStates: {
-      closeParen: 'expectBinOp',
+  [StateType.subExp]: {
+    subHandler: astSubExp,
+    endTokens: {
+      [TokenType.closeParen]: StateType.expectBinOp,
     },
   },
-  objKey: {
-    subHandler: subHandlers.objKey,
-    endStates: {
-      closeBracket: 'expectKeyValSep',
+  [StateType.objKey]: {
+    subHandler: astObjKey,
+    endTokens: {
+      [TokenType.closeBracket]: StateType.expectKeyValSep,
     },
   },
-  objVal: {
-    subHandler: subHandlers.objVal,
-    endStates: {
-      comma: 'expectObjKey',
-      closeCurly: 'expectBinOp',
+  [StateType.objVal]: {
+    subHandler: astObjVal,
+    endTokens: {
+      [TokenType.comma]: StateType.expectObjKey,
+      [TokenType.closeCurly]: StateType.expectBinOp,
     },
   },
-  arrayVal: {
-    subHandler: subHandlers.arrayVal,
-    endStates: {
-      comma: 'arrayVal',
-      closeBracket: 'expectBinOp',
+  [StateType.arrayVal]: {
+    subHandler: astArrayVal,
+    endTokens: {
+      [TokenType.comma]: StateType.arrayVal,
+      [TokenType.closeBracket]: StateType.expectBinOp,
     },
   },
-  defVal: {
-    subHandler: subHandlers.defVal,
-    endStates: {
-      semi: 'expectOperand',
+  [StateType.defVal]: {
+    subHandler: astDefVal,
+    endTokens: {
+      [TokenType.semi]: StateType.expectOperand,
     },
   },
-  exprTransform: {
-    subHandler: subHandlers.exprTransform,
-    endStates: {
-      closeParen: 'postTransform',
+  [StateType.exprTransform]: {
+    subHandler: astExprTransform,
+    endTokens: {
+      [TokenType.closeParen]: StateType.postTransform,
     },
   },
-  argVal: {
-    subHandler: subHandlers.argVal,
-    endStates: {
-      comma: 'argVal',
-      closeParen: 'expectBinOp',
+  [StateType.argVal]: {
+    subHandler: astArgVal,
+    endTokens: {
+      [TokenType.comma]: StateType.argVal,
+      [TokenType.closeParen]: StateType.expectBinOp,
     },
   },
-  ternaryMid: {
-    subHandler: subHandlers.ternaryMid,
-    endStates: {
-      colon: 'ternaryEnd',
+  [StateType.ternaryMid]: {
+    subHandler: astTernaryMid,
+    endTokens: {
+      [TokenType.colon]: StateType.ternaryEnd,
     },
   },
-  ternaryEnd: {
-    subHandler: subHandlers.ternaryEnd,
+  [StateType.ternaryEnd]: {
+    subHandler: astTernaryEnd,
     completable: true,
   },
-  complete: {
+  [StateType.complete]: {
     completable: true,
   },
 };

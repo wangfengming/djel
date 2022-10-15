@@ -2,463 +2,432 @@ import { expect } from 'chai';
 import { getGrammar } from '../src/grammar';
 import { Tokenizer } from '../src/tokenizer';
 import { Parser } from '../src/parser';
+import { AstNodeType } from '../src/types';
 
 describe('Parser', () => {
-  let tokenizer: ReturnType<typeof Tokenizer>;
-  let parser: Parser;
-
-  beforeEach(() => {
-    let grammar = getGrammar();
-    tokenizer = Tokenizer(grammar);
-    parser = new Parser(grammar);
-  });
+  const parse = (exp: string) => {
+    const grammar = getGrammar();
+    const tokenizer = Tokenizer(grammar);
+    const parser = new Parser(grammar);
+    const tokens = tokenizer.tokenize(exp);
+    parser.addTokens(tokens);
+    const ast = parser.complete();
+    return ast;
+  };
 
   describe('Literal', () => {
     it('literal boolean', () => {
-      parser.addTokens(tokenizer.tokenize('true'));
-      expect(parser.complete()).to.deep.equal({ type: 'Literal', value: true });
+      expect(parse('true')).to.deep.equal({ type: AstNodeType.Literal, value: true });
     });
     it('literal string', () => {
-      parser.addTokens(tokenizer.tokenize('"Hello \\""'));
-      expect(parser.complete()).to.deep.equal({ type: 'Literal', value: 'Hello "' });
+      expect(parse('"Hello \\""')).to.deep.equal({ type: AstNodeType.Literal, value: 'Hello "' });
     });
     it('literal number', () => {
-      parser.addTokens(tokenizer.tokenize('10'));
-      expect(parser.complete()).to.deep.equal({ type: 'Literal', value: 10 });
+      expect(parse('10')).to.deep.equal({ type: AstNodeType.Literal, value: 10 });
     });
     it('literal null', () => {
-      parser.addTokens(tokenizer.tokenize('null'));
-      expect(parser.complete()).to.deep.equal({ type: 'Literal', value: null });
+      expect(parse('null')).to.deep.equal({ type: AstNodeType.Literal, value: null });
     });
   });
   describe('Identifier', () => {
     it('identifier', () => {
-      parser.addTokens(tokenizer.tokenize('x'));
-      expect(parser.complete()).to.deep.equal({ type: 'Identifier', value: 'x' });
+      expect(parse('x')).to.deep.equal({ type: AstNodeType.Identifier, value: 'x' });
     });
   });
   describe('Unary Expression', () => {
     it('unary operator', () => {
-      parser.addTokens(tokenizer.tokenize('1*!!true-2'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('1*!!true-2')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '-',
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '*',
-          left: { type: 'Literal', value: 1 },
+          left: { type: AstNodeType.Literal, value: 1 },
           right: {
-            type: 'Unary',
+            type: AstNodeType.Unary,
             operator: '!',
             right: {
-              type: 'Unary',
+              type: AstNodeType.Unary,
               operator: '!',
-              right: { type: 'Literal', value: true },
+              right: { type: AstNodeType.Literal, value: true },
             },
           },
         },
-        right: { type: 'Literal', value: 2 },
+        right: { type: AstNodeType.Literal, value: 2 },
       });
     });
   });
   describe('Binary Expression', () => {
     it('binary expression 1+2', () => {
-      parser.addTokens(tokenizer.tokenize('1+2'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('1+2')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
-        left: { type: 'Literal', value: 1 },
-        right: { type: 'Literal', value: 2 },
+        left: { type: AstNodeType.Literal, value: 1 },
+        right: { type: AstNodeType.Literal, value: 2 },
       });
     });
     it('binary expression priority 2+3*4', () => {
-      parser.addTokens(tokenizer.tokenize('2+3*4'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('2+3*4')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
-        left: { type: 'Literal', value: 2 },
+        left: { type: AstNodeType.Literal, value: 2 },
         right: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '*',
-          left: { type: 'Literal', value: 3 },
-          right: { type: 'Literal', value: 4 },
+          left: { type: AstNodeType.Literal, value: 3 },
+          right: { type: AstNodeType.Literal, value: 4 },
         },
       });
     });
     it('binary expression priority 2*3+4', () => {
-      parser.addTokens(tokenizer.tokenize('2*3+4'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('2*3+4')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '*',
-          left: { type: 'Literal', value: 2 },
-          right: { type: 'Literal', value: 3 },
+          left: { type: AstNodeType.Literal, value: 2 },
+          right: { type: AstNodeType.Literal, value: 3 },
         },
-        right: { type: 'Literal', value: 4 },
+        right: { type: AstNodeType.Literal, value: 4 },
       });
     });
     it('binary expression 2+3*4==5/6-7', () => {
-      parser.addTokens(tokenizer.tokenize('2+3*4==5/6-7'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('2+3*4==5/6-7')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '==',
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
-          left: { type: 'Literal', value: 2 },
+          left: { type: AstNodeType.Literal, value: 2 },
           right: {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '*',
-            left: { type: 'Literal', value: 3 },
-            right: { type: 'Literal', value: 4 },
+            left: { type: AstNodeType.Literal, value: 3 },
+            right: { type: AstNodeType.Literal, value: 4 },
           },
         },
         right: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '-',
           left: {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '/',
-            left: { type: 'Literal', value: 5 },
-            right: { type: 'Literal', value: 6 },
+            left: { type: AstNodeType.Literal, value: 5 },
+            right: { type: AstNodeType.Literal, value: 6 },
           },
-          right: { type: 'Literal', value: 7 },
+          right: { type: AstNodeType.Literal, value: 7 },
         },
       });
     });
     it('sub expression (2+3)*4', () => {
-      parser.addTokens(tokenizer.tokenize('(2+3)*4'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('(2+3)*4')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '*',
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
-          left: { type: 'Literal', value: 2 },
-          right: { type: 'Literal', value: 3 },
+          left: { type: AstNodeType.Literal, value: 2 },
+          right: { type: AstNodeType.Literal, value: 3 },
         },
-        right: { type: 'Literal', value: 4 },
+        right: { type: AstNodeType.Literal, value: 4 },
       });
     });
     it('nested sub expression (4*(2+3))/5', () => {
-      parser.addTokens(tokenizer.tokenize('(4*(2+3))/5'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('(4*(2+3))/5')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '/',
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '*',
-          left: { type: 'Literal', value: 4 },
+          left: { type: AstNodeType.Literal, value: 4 },
           right: {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '+',
-            left: { type: 'Literal', value: 2 },
-            right: { type: 'Literal', value: 3 },
+            left: { type: AstNodeType.Literal, value: 2 },
+            right: { type: AstNodeType.Literal, value: 3 },
           },
         },
-        right: { type: 'Literal', value: 5 },
+        right: { type: AstNodeType.Literal, value: 5 },
       });
     });
   });
   describe('Ternary Expression', () => {
     it('ternary expression', () => {
-      parser.addTokens(tokenizer.tokenize('foo ? 1 : 0'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Conditional',
-        test: { type: 'Identifier', value: 'foo' },
-        consequent: { type: 'Literal', value: 1 },
-        alternate: { type: 'Literal', value: 0 },
+      expect(parse('foo ? 1 : 0')).to.deep.equal({
+        type: AstNodeType.Conditional,
+        test: { type: AstNodeType.Identifier, value: 'foo' },
+        consequent: { type: AstNodeType.Literal, value: 1 },
+        alternate: { type: AstNodeType.Literal, value: 0 },
       });
     });
     it('nested and grouped ternary expressions', () => {
-      parser.addTokens(tokenizer.tokenize('foo ? (bar ? 1 : 2) : 3'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Conditional',
-        test: { type: 'Identifier', value: 'foo' },
+      expect(parse('foo ? (bar ? 1 : 2) : 3')).to.deep.equal({
+        type: AstNodeType.Conditional,
+        test: { type: AstNodeType.Identifier, value: 'foo' },
         consequent: {
-          type: 'Conditional',
-          test: { type: 'Identifier', value: 'bar' },
-          consequent: { type: 'Literal', value: 1 },
-          alternate: { type: 'Literal', value: 2 },
+          type: AstNodeType.Conditional,
+          test: { type: AstNodeType.Identifier, value: 'bar' },
+          consequent: { type: AstNodeType.Literal, value: 1 },
+          alternate: { type: AstNodeType.Literal, value: 2 },
         },
-        alternate: { type: 'Literal', value: 3 },
+        alternate: { type: AstNodeType.Literal, value: 3 },
       });
     });
     it('nested, non-grouped ternary expressions', () => {
-      parser.addTokens(tokenizer.tokenize('foo ? bar ? 1 : 2 : 3'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Conditional',
-        test: { type: 'Identifier', value: 'foo' },
+      expect(parse('foo ? bar ? 1 : 2 : 3')).to.deep.equal({
+        type: AstNodeType.Conditional,
+        test: { type: AstNodeType.Identifier, value: 'foo' },
         consequent: {
-          type: 'Conditional',
-          test: { type: 'Identifier', value: 'bar' },
-          consequent: { type: 'Literal', value: 1 },
-          alternate: { type: 'Literal', value: 2 },
+          type: AstNodeType.Conditional,
+          test: { type: AstNodeType.Identifier, value: 'bar' },
+          consequent: { type: AstNodeType.Literal, value: 1 },
+          alternate: { type: AstNodeType.Literal, value: 2 },
         },
-        alternate: { type: 'Literal', value: 3 },
+        alternate: { type: AstNodeType.Literal, value: 3 },
       });
     });
     it('ternary expression with objects', () => {
-      parser.addTokens(tokenizer.tokenize('foo ? {bar: "tek"} : "baz"'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Conditional',
-        test: { type: 'Identifier', value: 'foo' },
+      expect(parse('foo ? {bar: "tek"} : "baz"')).to.deep.equal({
+        type: AstNodeType.Conditional,
+        test: { type: AstNodeType.Identifier, value: 'foo' },
         consequent: {
-          type: 'Object',
+          type: AstNodeType.Object,
           entries: [
             {
-              key: { type: 'Literal', value: 'bar' },
-              value: { type: 'Literal', value: 'tek' },
+              key: { type: AstNodeType.Literal, value: 'bar' },
+              value: { type: AstNodeType.Literal, value: 'tek' },
             },
           ],
         },
-        alternate: { type: 'Literal', value: 'baz' },
+        alternate: { type: AstNodeType.Literal, value: 'baz' },
       });
     });
   });
   describe('Member Access', () => {
     it('member access .', () => {
-      const tokens = tokenizer.tokenize('foo.bar.baz + 1');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('foo.bar.baz + 1')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'Member',
+          type: AstNodeType.Member,
           left: {
-            type: 'Member',
+            type: AstNodeType.Member,
             left: {
-              type: 'Identifier',
+              type: AstNodeType.Identifier,
               value: 'foo',
             },
             right: {
-              type: 'Literal',
+              type: AstNodeType.Literal,
               value: 'bar',
             },
           },
           right: {
-            type: 'Literal',
+            type: AstNodeType.Literal,
             value: 'baz',
           },
         },
-        right: { type: 'Literal', value: 1 },
+        right: { type: AstNodeType.Literal, value: 1 },
       });
     });
     it('member access []', () => {
-      parser.addTokens(tokenizer.tokenize('foo.bar[1 + 1][0].baz[2]'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('foo.bar[1 + 1][0].baz[2]')).to.deep.equal({
+        type: AstNodeType.Member,
         computed: true,
         left: {
-          type: 'Member',
+          type: AstNodeType.Member,
           left: {
-            type: 'Member',
+            type: AstNodeType.Member,
             computed: true,
             left: {
-              type: 'Member',
+              type: AstNodeType.Member,
               computed: true,
               left: {
-                type: 'Member',
-                left: { type: 'Identifier', value: 'foo' },
-                right: { type: 'Literal', value: 'bar' },
+                type: AstNodeType.Member,
+                left: { type: AstNodeType.Identifier, value: 'foo' },
+                right: { type: AstNodeType.Literal, value: 'bar' },
               },
               right: {
-                type: 'Binary',
+                type: AstNodeType.Binary,
                 operator: '+',
-                left: { type: 'Literal', value: 1 },
-                right: { type: 'Literal', value: 1 },
+                left: { type: AstNodeType.Literal, value: 1 },
+                right: { type: AstNodeType.Literal, value: 1 },
               },
             },
-            right: { type: 'Literal', value: 0 },
+            right: { type: AstNodeType.Literal, value: 0 },
           },
-          right: { type: 'Literal', value: 'baz' },
+          right: { type: AstNodeType.Literal, value: 'baz' },
         },
-        right: { type: 'Literal', value: 2 },
+        right: { type: AstNodeType.Literal, value: 2 },
       });
     });
     it('member access . for all operands', () => {
-      parser.addTokens(tokenizer.tokenize('"foo".length + {foo: "bar"}.foo'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('"foo".length + {foo: "bar"}.foo')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'Member',
-          left: { type: 'Literal', value: 'foo' },
-          right: { type: 'Literal', value: 'length' },
+          type: AstNodeType.Member,
+          left: { type: AstNodeType.Literal, value: 'foo' },
+          right: { type: AstNodeType.Literal, value: 'length' },
         },
         right: {
-          type: 'Member',
+          type: AstNodeType.Member,
           left: {
-            type: 'Object',
+            type: AstNodeType.Object,
             entries: [
               {
-                key: { type: 'Literal', value: 'foo' },
-                value: { type: 'Literal', value: 'bar' },
+                key: { type: AstNodeType.Literal, value: 'foo' },
+                value: { type: AstNodeType.Literal, value: 'bar' },
               },
             ],
           },
-          right: { type: 'Literal', value: 'foo' },
+          right: { type: AstNodeType.Literal, value: 'foo' },
         },
       });
     });
     it('member access . on subexpressions', () => {
-      parser.addTokens(tokenizer.tokenize('("foo" + "bar").length'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('("foo" + "bar").length')).to.deep.equal({
+        type: AstNodeType.Member,
         left: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
-          left: { type: 'Literal', value: 'foo' },
-          right: { type: 'Literal', value: 'bar' },
+          left: { type: AstNodeType.Literal, value: 'foo' },
+          right: { type: AstNodeType.Literal, value: 'bar' },
         },
-        right: { type: 'Literal', value: 'length' },
+        right: { type: AstNodeType.Literal, value: 'length' },
       });
     });
     it('member access . on arrays', () => {
-      parser.addTokens(tokenizer.tokenize('["foo", "bar"].length'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('["foo", "bar"].length')).to.deep.equal({
+        type: AstNodeType.Member,
         left: {
-          type: 'Array',
+          type: AstNodeType.Array,
           value: [
-            { type: 'Literal', value: 'foo' },
-            { type: 'Literal', value: 'bar' },
+            { type: AstNodeType.Literal, value: 'foo' },
+            { type: AstNodeType.Literal, value: 'bar' },
           ],
         },
-        right: { type: 'Literal', value: 'length' },
+        right: { type: AstNodeType.Literal, value: 'length' },
       });
     });
     it('should correctly balance a binary op between complex identifiers', () => {
-      parser.addTokens(tokenizer.tokenize('a.b == c.d'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('a.b == c.d')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '==',
         left: {
-          type: 'Member',
-          left: { type: 'Identifier', value: 'a' },
-          right: { type: 'Literal', value: 'b' },
+          type: AstNodeType.Member,
+          left: { type: AstNodeType.Identifier, value: 'a' },
+          right: { type: AstNodeType.Literal, value: 'b' },
         },
         right: {
-          type: 'Member',
-          left: { type: 'Identifier', value: 'c' },
-          right: { type: 'Literal', value: 'd' },
+          type: AstNodeType.Member,
+          left: { type: AstNodeType.Identifier, value: 'c' },
+          right: { type: AstNodeType.Literal, value: 'd' },
         },
       });
     });
   });
   describe('Optional Chain', () => {
     it('member access ?.', () => {
-      const tokens = tokenizer.tokenize('foo?.bar.baz');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('foo?.bar.baz')).to.deep.equal({
+        type: AstNodeType.Member,
         leftOptional: true,
         left: {
-          type: 'Member',
+          type: AstNodeType.Member,
           optional: true,
           left: {
-            type: 'Identifier',
+            type: AstNodeType.Identifier,
             value: 'foo',
           },
           right: {
-            type: 'Literal',
+            type: AstNodeType.Literal,
             value: 'bar',
           },
         },
         right: {
-          type: 'Literal',
+          type: AstNodeType.Literal,
           value: 'baz',
         },
       });
     });
     it('member access ?.[', () => {
-      const tokens = tokenizer.tokenize('foo?.["bar"].baz');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('foo?.["bar"].baz')).to.deep.equal({
+        type: AstNodeType.Member,
         leftOptional: true,
         left: {
-          type: 'Member',
+          type: AstNodeType.Member,
           computed: true,
           optional: true,
           left: {
-            type: 'Identifier',
+            type: AstNodeType.Identifier,
             value: 'foo',
           },
           right: {
-            type: 'Literal',
+            type: AstNodeType.Literal,
             value: 'bar',
           },
         },
         right: {
-          type: 'Literal',
+          type: AstNodeType.Literal,
           value: 'baz',
         },
       });
     });
     it('member access ?.(', () => {
-      const tokens = tokenizer.tokenize('foo?.().baz');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('foo?.().baz')).to.deep.equal({
+        type: AstNodeType.Member,
         leftOptional: true,
         left: {
-          type: 'FunctionCall',
+          type: AstNodeType.FunctionCall,
           optional: true,
           func: {
-            type: 'Identifier',
+            type: AstNodeType.Identifier,
             value: 'foo',
           },
           args: [],
         },
         right: {
-          type: 'Literal',
+          type: AstNodeType.Literal,
           value: 'baz',
         },
       });
     });
     it('left optional [', () => {
-      const tokens = tokenizer.tokenize('foo?.bar["baz"]');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Member',
+      expect(parse('foo?.bar["baz"]')).to.deep.equal({
+        type: AstNodeType.Member,
         computed: true,
         leftOptional: true,
         left: {
-          type: 'Member',
+          type: AstNodeType.Member,
           optional: true,
           left: {
-            type: 'Identifier',
+            type: AstNodeType.Identifier,
             value: 'foo',
           },
           right: {
-            type: 'Literal',
+            type: AstNodeType.Literal,
             value: 'bar',
           },
         },
         right: {
-          type: 'Literal',
+          type: AstNodeType.Literal,
           value: 'baz',
         },
       });
     });
     it('left optional (', () => {
-      const tokens = tokenizer.tokenize('foo?.bar()');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
+      expect(parse('foo?.bar()')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
         leftOptional: true,
         func: {
-          type: 'Member',
+          type: AstNodeType.Member,
           optional: true,
           left: {
-            type: 'Identifier',
+            type: AstNodeType.Identifier,
             value: 'foo',
           },
           right: {
-            type: 'Literal',
+            type: AstNodeType.Literal,
             value: 'bar',
           },
         },
@@ -468,71 +437,71 @@ describe('Parser', () => {
   });
   describe('Whitespaces', () => {
     it('Whitespaces in expression', () => {
-      parser.addTokens(tokenizer.tokenize('\t2\r\n+\n\r3\n\n'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('\t2\r\n+\n\r3\n\n')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
-        left: { type: 'Literal', value: 2 },
-        right: { type: 'Literal', value: 3 },
+        left: { type: AstNodeType.Literal, value: 2 },
+        right: { type: AstNodeType.Literal, value: 3 },
       });
     });
   });
   describe('Throws', () => {
     it('should throw if addToken after complete', () => {
-      parser.addTokens(tokenizer.tokenize('a.b == c.d'));
+      const grammar = getGrammar();
+      const tokenizer = Tokenizer(grammar);
+      const parser = new Parser(grammar);
+      const tokens = tokenizer.tokenize('a.b == c.d');
+      parser.addTokens(tokens);
       parser.complete();
-      expect(() => parser.addTokens(tokenizer.tokenize('a.b == c.d'))).to
+      expect(() => parser.addTokens(tokens)).to
         .throw('Cannot add a new token to a completed Parser');
     });
     it('should throw if add invalid token', () => {
-      expect(() => parser.addTokens(tokenizer.tokenize('a.b ~+= c.d'))).to
+      expect(() => parse('a.b ~+= c.d')).to
         .throw('Invalid expression token: ~');
     });
     it('should throw if add unexpected token', () => {
-      expect(() => parser.addTokens(tokenizer.tokenize('a.b =+= c.d'))).to
+      expect(() => parse('a.b =+= c.d')).to
         .throw('Token = unexpected in expression: a.b =');
     });
     it('should throw if token is not complete', () => {
-      parser.addTokens(tokenizer.tokenize('a.b == c.d +'));
-      expect(() => parser.complete()).to
+      expect(() => parse('a.b == c.d +')).to
         .throw('Unexpected end of expression: a.b == c.d +');
     });
   });
   describe('Object literals', () => {
     it('should handle object literals', () => {
-      parser.addTokens(tokenizer.tokenize('{foo: "bar", tek: 1+2}'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Object',
+      expect(parse('{foo: "bar", tek: 1+2}')).to.deep.equal({
+        type: AstNodeType.Object,
         entries: [
           {
-            key: { type: 'Literal', value: 'foo' },
-            value: { type: 'Literal', value: 'bar' },
+            key: { type: AstNodeType.Literal, value: 'foo' },
+            value: { type: AstNodeType.Literal, value: 'bar' },
           },
           {
-            key: { type: 'Literal', value: 'tek' },
+            key: { type: AstNodeType.Literal, value: 'tek' },
             value: {
-              type: 'Binary',
+              type: AstNodeType.Binary,
               operator: '+',
-              left: { type: 'Literal', value: 1 },
-              right: { type: 'Literal', value: 2 },
+              left: { type: AstNodeType.Literal, value: 1 },
+              right: { type: AstNodeType.Literal, value: 2 },
             },
           },
         ],
       });
     });
     it('should handle nested object literals', () => {
-      parser.addTokens(tokenizer.tokenize('{foo: {bar: "tek"}}'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Object',
+      expect(parse('{foo: {bar: "tek"}}')).to.deep.equal({
+        type: AstNodeType.Object,
         entries: [
           {
-            key: { type: 'Literal', value: 'foo' },
+            key: { type: AstNodeType.Literal, value: 'foo' },
             value: {
-              type: 'Object',
+              type: AstNodeType.Object,
               entries: [
                 {
-                  key: { type: 'Literal', value: 'bar' },
-                  value: { type: 'Literal', value: 'tek' },
+                  key: { type: AstNodeType.Literal, value: 'bar' },
+                  value: { type: AstNodeType.Literal, value: 'tek' },
                 },
               ],
             },
@@ -541,25 +510,23 @@ describe('Parser', () => {
       });
     });
     it('should handle empty object literals', () => {
-      parser.addTokens(tokenizer.tokenize('{}'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Object',
+      expect(parse('{}')).to.deep.equal({
+        type: AstNodeType.Object,
         entries: [],
       });
     });
     it('should handle object with expression key', () => {
-      parser.addTokens(tokenizer.tokenize('{["a"+1]:1}'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Object',
+      expect(parse('{["a"+1]:1}')).to.deep.equal({
+        type: AstNodeType.Object,
         entries: [
           {
             key: {
-              type: 'Binary',
+              type: AstNodeType.Binary,
               operator: '+',
-              left: { type: 'Literal', value: 'a' },
-              right: { type: 'Literal', value: 1 },
+              left: { type: AstNodeType.Literal, value: 'a' },
+              right: { type: AstNodeType.Literal, value: 1 },
             },
-            value: { type: 'Literal', value: 1 },
+            value: { type: AstNodeType.Literal, value: 1 },
           },
         ],
       });
@@ -567,194 +534,181 @@ describe('Parser', () => {
   });
   describe('Array literals', () => {
     it('should handle array literals', () => {
-      parser.addTokens(tokenizer.tokenize('["foo", 1+2]'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Array',
+      expect(parse('["foo", 1+2]')).to.deep.equal({
+        type: AstNodeType.Array,
         value: [
-          { type: 'Literal', value: 'foo' },
+          { type: AstNodeType.Literal, value: 'foo' },
           {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '+',
-            left: { type: 'Literal', value: 1 },
-            right: { type: 'Literal', value: 2 },
+            left: { type: AstNodeType.Literal, value: 1 },
+            right: { type: AstNodeType.Literal, value: 2 },
           },
         ],
       });
     });
     it('should handle nested array literals', () => {
-      parser.addTokens(tokenizer.tokenize('["foo", ["bar", "tek"]]'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Array',
+      expect(parse('["foo", ["bar", "tek"]]')).to.deep.equal({
+        type: AstNodeType.Array,
         value: [
-          { type: 'Literal', value: 'foo' },
+          { type: AstNodeType.Literal, value: 'foo' },
           {
-            type: 'Array',
+            type: AstNodeType.Array,
             value: [
-              { type: 'Literal', value: 'bar' },
-              { type: 'Literal', value: 'tek' },
+              { type: AstNodeType.Literal, value: 'bar' },
+              { type: AstNodeType.Literal, value: 'tek' },
             ],
           },
         ],
       });
     });
     it('should handle empty array literals', () => {
-      parser.addTokens(tokenizer.tokenize('[]'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Array',
+      expect(parse('[]')).to.deep.equal({
+        type: AstNodeType.Array,
         value: [],
       });
     });
   });
   describe('Define variables', () => {
     it('def variables', () => {
-      parser.addTokens(tokenizer.tokenize('def a = 1; def b = 2; a + b'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Def',
+      expect(parse('def a = 1; def b = 2; a + b')).to.deep.equal({
+        type: AstNodeType.Def,
         defs: [
-          { name: 'a', value: { type: 'Literal', value: 1 } },
-          { name: 'b', value: { type: 'Literal', value: 2 } },
+          { name: 'a', value: { type: AstNodeType.Literal, value: 1 } },
+          { name: 'b', value: { type: AstNodeType.Literal, value: 2 } },
         ],
         statement: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
-          left: { type: 'Identifier', value: 'a' },
-          right: { type: 'Identifier', value: 'b' },
+          left: { type: AstNodeType.Identifier, value: 'a' },
+          right: { type: AstNodeType.Identifier, value: 'b' },
         },
       });
     });
     it('def variables computed', () => {
-      parser.addTokens(tokenizer.tokenize('def a = 1; def b = a + 1; def c = a + b; a + b + c'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Def',
+      expect(parse('def a = 1; def b = a + 1; def c = a + b; a + b + c')).to.deep.equal({
+        type: AstNodeType.Def,
         defs: [
-          { name: 'a', value: { type: 'Literal', value: 1 } },
+          { name: 'a', value: { type: AstNodeType.Literal, value: 1 } },
           {
             name: 'b',
             value: {
-              type: 'Binary',
+              type: AstNodeType.Binary,
               operator: '+',
-              left: { type: 'Identifier', value: 'a' },
-              right: { type: 'Literal', value: 1 },
+              left: { type: AstNodeType.Identifier, value: 'a' },
+              right: { type: AstNodeType.Literal, value: 1 },
             },
           },
           {
             name: 'c',
             value: {
-              type: 'Binary',
+              type: AstNodeType.Binary,
               operator: '+',
-              left: { type: 'Identifier', value: 'a' },
-              right: { type: 'Identifier', value: 'b' },
+              left: { type: AstNodeType.Identifier, value: 'a' },
+              right: { type: AstNodeType.Identifier, value: 'b' },
             },
           },
         ],
         statement: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
           left: {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '+',
-            left: { type: 'Identifier', value: 'a' },
-            right: { type: 'Identifier', value: 'b' },
+            left: { type: AstNodeType.Identifier, value: 'a' },
+            right: { type: AstNodeType.Identifier, value: 'b' },
           },
-          right: { type: 'Identifier', value: 'c' },
+          right: { type: AstNodeType.Identifier, value: 'c' },
         },
       });
     });
     it('def variables in sub-expression', () => {
-      parser.addTokens(tokenizer.tokenize('x ? (def a = 1; def b = 2; a + b) : y'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Conditional',
-        test: { type: 'Identifier', value: 'x' },
+      expect(parse('x ? (def a = 1; def b = 2; a + b) : y')).to.deep.equal({
+        type: AstNodeType.Conditional,
+        test: { type: AstNodeType.Identifier, value: 'x' },
         consequent: {
-          type: 'Def',
+          type: AstNodeType.Def,
           defs: [
-            { name: 'a', value: { type: 'Literal', value: 1 } },
-            { name: 'b', value: { type: 'Literal', value: 2 } },
+            { name: 'a', value: { type: AstNodeType.Literal, value: 1 } },
+            { name: 'b', value: { type: AstNodeType.Literal, value: 2 } },
           ],
           statement: {
-            type: 'Binary',
+            type: AstNodeType.Binary,
             operator: '+',
-            left: { type: 'Identifier', value: 'a' },
-            right: { type: 'Identifier', value: 'b' },
+            left: { type: AstNodeType.Identifier, value: 'a' },
+            right: { type: AstNodeType.Identifier, value: 'b' },
           },
         },
-        alternate: { type: 'Identifier', value: 'y' },
+        alternate: { type: AstNodeType.Identifier, value: 'y' },
       });
     });
     it('def variables without return will be ignored', () => {
-      parser.addTokens(tokenizer.tokenize('def a = 1;'));
-      expect(parser.complete()).to.equal(undefined);
+      expect(parse('def a = 1;')).to.equal(undefined);
     });
     it('ignore then end semi in def variables', () => {
-      parser.addTokens(tokenizer.tokenize('def a = 1'));
-      expect(parser.complete()).to.equal(undefined);
+      expect(parse('def a = 1')).to.equal(undefined);
     });
     it('ignore then end semi in return', () => {
-      parser.addTokens(tokenizer.tokenize('def a = 1; a + 1;'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'Def',
+      expect(parse('def a = 1; a + 1;')).to.deep.equal({
+        type: AstNodeType.Def,
         defs: [
-          { name: 'a', value: { type: 'Literal', value: 1 } },
+          { name: 'a', value: { type: AstNodeType.Literal, value: 1 } },
         ],
         statement: {
-          type: 'Binary',
+          type: AstNodeType.Binary,
           operator: '+',
-          left: { type: 'Identifier', value: 'a' },
-          right: { type: 'Literal', value: 1 },
+          left: { type: AstNodeType.Identifier, value: 'a' },
+          right: { type: AstNodeType.Literal, value: 1 },
         },
       });
     });
   });
   describe('Transform', () => {
     it('should apply transforms', () => {
-      const tokens = tokenizer.tokenize('foo.baz|tr+1');
-      parser.addTokens(tokens);
-      const ast = parser.complete();
-      expect(ast).to.deep.equal({
-        type: 'Binary',
+      expect(parse('foo.baz|tr+1')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'FunctionCall',
-          func: { type: 'Identifier', value: 'tr' },
+          type: AstNodeType.FunctionCall,
+          func: { type: AstNodeType.Identifier, value: 'tr' },
           args: [
             {
-              type: 'Member',
-              left: { type: 'Identifier', value: 'foo' },
-              right: { type: 'Literal', value: 'baz' },
+              type: AstNodeType.Member,
+              left: { type: AstNodeType.Identifier, value: 'foo' },
+              right: { type: AstNodeType.Literal, value: 'baz' },
             },
           ],
         },
-        right: { type: 'Literal', value: 1 },
+        right: { type: AstNodeType.Literal, value: 1 },
       });
     });
     it('should apply transforms with argument', () => {
-      parser.addTokens(tokenizer.tokenize('foo|tr1|tr2.baz|tr3({bar:"tek"})'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'tr3' },
+      expect(parse('foo|tr1|tr2.baz|tr3({bar:"tek"})')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'tr3' },
         args: [
           {
-            type: 'Member',
+            type: AstNodeType.Member,
             left: {
-              type: 'FunctionCall',
-              func: { type: 'Identifier', value: 'tr2' },
+              type: AstNodeType.FunctionCall,
+              func: { type: AstNodeType.Identifier, value: 'tr2' },
               args: [{
-                type: 'FunctionCall',
-                func: { type: 'Identifier', value: 'tr1' },
+                type: AstNodeType.FunctionCall,
+                func: { type: AstNodeType.Identifier, value: 'tr1' },
                 args: [{
-                  type: 'Identifier',
+                  type: AstNodeType.Identifier,
                   value: 'foo',
                 }],
               }],
             },
-            right: { type: 'Literal', value: 'baz' },
+            right: { type: AstNodeType.Literal, value: 'baz' },
           },
           {
-            type: 'Object',
+            type: AstNodeType.Object,
             entries: [
               {
-                key: { type: 'Literal', value: 'bar' },
-                value: { type: 'Literal', value: 'tek' },
+                key: { type: AstNodeType.Literal, value: 'bar' },
+                value: { type: AstNodeType.Literal, value: 'tek' },
               },
             ],
           },
@@ -762,80 +716,73 @@ describe('Parser', () => {
       });
     });
     it('should handle multiple arguments in transforms', () => {
-      parser.addTokens(tokenizer.tokenize('foo|bar("tek", 5, true)'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'bar' },
+      expect(parse('foo|bar("tek", 5, true)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'bar' },
         args: [
-          { type: 'Identifier', value: 'foo' },
-          { type: 'Literal', value: 'tek' },
-          { type: 'Literal', value: 5 },
-          { type: 'Literal', value: true },
+          { type: AstNodeType.Identifier, value: 'foo' },
+          { type: AstNodeType.Literal, value: 'tek' },
+          { type: AstNodeType.Literal, value: 5 },
+          { type: AstNodeType.Literal, value: true },
         ],
       });
     });
     it('should apply context function as transform', () => {
-      const tokens = tokenizer.tokenize('arr|(test)');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'test' },
+      expect(parse('arr|(test)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'test' },
         args: [
-          { type: 'Identifier', value: 'arr' },
+          { type: AstNodeType.Identifier, value: 'arr' },
         ],
       });
     });
   });
   describe('Function Call', () => {
     it('should apply transforms', () => {
-      const tokens = tokenizer.tokenize('tr(foo.baz)+1');
-      parser.addTokens(tokens);
-      const ast = parser.complete();
-      expect(ast).to.deep.equal({
-        type: 'Binary',
+      expect(parse('tr(foo.baz)+1')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'FunctionCall',
-          func: { type: 'Identifier', value: 'tr' },
+          type: AstNodeType.FunctionCall,
+          func: { type: AstNodeType.Identifier, value: 'tr' },
           args: [
             {
-              type: 'Member',
-              left: { type: 'Identifier', value: 'foo' },
-              right: { type: 'Literal', value: 'baz' },
+              type: AstNodeType.Member,
+              left: { type: AstNodeType.Identifier, value: 'foo' },
+              right: { type: AstNodeType.Literal, value: 'baz' },
             },
           ],
         },
-        right: { type: 'Literal', value: 1 },
+        right: { type: AstNodeType.Literal, value: 1 },
       });
     });
     it('should apply transforms with argument', () => {
-      parser.addTokens(tokenizer.tokenize('tr3(tr2(tr1(foo)).baz,{bar:"tek"})'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'tr3' },
+      expect(parse('tr3(tr2(tr1(foo)).baz,{bar:"tek"})')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'tr3' },
         args: [
           {
-            type: 'Member',
+            type: AstNodeType.Member,
             left: {
-              type: 'FunctionCall',
-              func: { type: 'Identifier', value: 'tr2' },
+              type: AstNodeType.FunctionCall,
+              func: { type: AstNodeType.Identifier, value: 'tr2' },
               args: [{
-                type: 'FunctionCall',
-                func: { type: 'Identifier', value: 'tr1' },
+                type: AstNodeType.FunctionCall,
+                func: { type: AstNodeType.Identifier, value: 'tr1' },
                 args: [{
-                  type: 'Identifier',
+                  type: AstNodeType.Identifier,
                   value: 'foo',
                 }],
               }],
             },
-            right: { type: 'Literal', value: 'baz' },
+            right: { type: AstNodeType.Literal, value: 'baz' },
           },
           {
-            type: 'Object',
+            type: AstNodeType.Object,
             entries: [
               {
-                key: { type: 'Literal', value: 'bar' },
-                value: { type: 'Literal', value: 'tek' },
+                key: { type: AstNodeType.Literal, value: 'bar' },
+                value: { type: AstNodeType.Literal, value: 'tek' },
               },
             ],
           },
@@ -843,83 +790,76 @@ describe('Parser', () => {
       });
     });
     it('should handle multiple arguments in transforms', () => {
-      parser.addTokens(tokenizer.tokenize('bar(foo, "tek", 5, true)'));
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'bar' },
+      expect(parse('bar(foo, "tek", 5, true)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'bar' },
         args: [
-          { type: 'Identifier', value: 'foo' },
-          { type: 'Literal', value: 'tek' },
-          { type: 'Literal', value: 5 },
-          { type: 'Literal', value: true },
+          { type: AstNodeType.Identifier, value: 'foo' },
+          { type: AstNodeType.Literal, value: 'tek' },
+          { type: AstNodeType.Literal, value: 5 },
+          { type: AstNodeType.Literal, value: true },
         ],
       });
     });
     it('should apply context function as transform', () => {
-      const tokens = tokenizer.tokenize('test(arr)');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'test' },
+      expect(parse('test(arr)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'test' },
         args: [
-          { type: 'Identifier', value: 'arr' },
+          { type: AstNodeType.Identifier, value: 'arr' },
         ],
       });
     });
   });
   describe('Lambda', () => {
     it('should apply lambda as transform', () => {
-      const tokens = tokenizer.tokenize('arr|(@.x>1)+1');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'Binary',
+      expect(parse('arr|(@.x>1)+1')).to.deep.equal({
+        type: AstNodeType.Binary,
         operator: '+',
         left: {
-          type: 'FunctionCall',
+          type: AstNodeType.FunctionCall,
           func: {
-            type: 'Lambda',
+            type: AstNodeType.Lambda,
             expr: {
-              type: 'Binary',
+              type: AstNodeType.Binary,
               operator: '>',
               left: {
-                type: 'Member',
-                left: { type: 'Identifier', value: '@', argIndex: 0 },
-                right: { type: 'Literal', value: 'x' },
+                type: AstNodeType.Member,
+                left: { type: AstNodeType.Identifier, value: '@', argIndex: 0 },
+                right: { type: AstNodeType.Literal, value: 'x' },
               },
-              right: { type: 'Literal', value: 1 },
+              right: { type: AstNodeType.Literal, value: 1 },
             },
           },
           args: [
-            { type: 'Identifier', value: 'arr' },
+            { type: AstNodeType.Identifier, value: 'arr' },
           ],
         },
-        right: { type: 'Literal', value: 1 },
+        right: { type: AstNodeType.Literal, value: 1 },
       });
     });
     it('should apply transform with lambda arg', () => {
-      const tokens = tokenizer.tokenize('arr|filter((@1.x>1)?2:3)');
-      parser.addTokens(tokens);
-      expect(parser.complete()).to.deep.equal({
-        type: 'FunctionCall',
-        func: { type: 'Identifier', value: 'filter' },
+      expect(parse('arr|filter((@1.x>1)?2:3)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'filter' },
         args: [
-          { type: 'Identifier', value: 'arr' },
+          { type: AstNodeType.Identifier, value: 'arr' },
           {
-            type: 'Lambda',
+            type: AstNodeType.Lambda,
             expr: {
-              type: 'Conditional',
+              type: AstNodeType.Conditional,
               test: {
-                type: 'Binary',
+                type: AstNodeType.Binary,
                 operator: '>',
                 left: {
-                  type: 'Member',
-                  left: { type: 'Identifier', value: '@1', argIndex: 1 },
-                  right: { type: 'Literal', value: 'x' },
+                  type: AstNodeType.Member,
+                  left: { type: AstNodeType.Identifier, value: '@1', argIndex: 1 },
+                  right: { type: AstNodeType.Literal, value: 'x' },
                 },
-                right: { type: 'Literal', value: 1 },
+                right: { type: AstNodeType.Literal, value: 1 },
               },
-              consequent: { type: 'Literal', value: 2 },
-              alternate: { type: 'Literal', value: 3 },
+              consequent: { type: AstNodeType.Literal, value: 2 },
+              alternate: { type: AstNodeType.Literal, value: 3 },
             },
           },
         ],

@@ -38,7 +38,7 @@ export default function Djel() {
       const evaluator = Evaluator(_grammar, context);
       return evaluator.evaluate(ast);
     };
-    return { ast, evaluate };
+    return { evaluate };
   };
 
   /**
