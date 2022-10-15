@@ -114,6 +114,11 @@ export const getGrammar = (): Grammar => ({
       delay: true,
       fn: (left, right) => left || right(),
     },
+    '??': {
+      priority: 10,
+      delay: true,
+      fn: (left, right) => left != null ? left : right(),
+    },
     in: {
       priority: 40,
       fn: (left, right) => {

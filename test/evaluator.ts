@@ -60,9 +60,19 @@ describe('Evaluator', () => {
     });
     it('!', () => {
       expect(evaluate('!3')).to.equal(false);
+      expect(evaluate('!!0')).to.equal(false);
     });
     it('||', () => {
       expect(evaluate('true||false')).to.equal(true);
+      expect(evaluate('""||false')).to.equal(false);
+      expect(evaluate('1||false')).to.equal(1);
+      expect(evaluate('0||{}')).to.deep.equal({});
+    });
+    it('??', () => {
+      expect(evaluate('null??1')).to.equal(1);
+      expect(evaluate('false??1')).to.equal(false);
+      expect(evaluate('""??false')).to.equal('');
+      expect(evaluate('0??{}')).to.equal(0);
     });
   });
   describe('Literal', () => {

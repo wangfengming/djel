@@ -104,6 +104,7 @@ import Djel from 'djexl-js';
 | Power of                   |     `^`      |
 | Logical AND                |     `&&`     |
 | Logical OR                 | &#124;&#124; |
+| Nullish coalescing         |     `??`     |
 
 #### Concat Arrays/Objects use `+`
 
@@ -367,6 +368,7 @@ The `priority` of existing operators (please refer to `src/grammar.ts`).
 | Priority |             Symbols              | Operators                   |
 |:--------:|:--------------------------------:|-----------------------------|
 |    10    |           &#124;&#124;           | Logic OR                    |
+|    10    |               `??`               | Nullish coalescing          |
 |    20    |               `&&`               | Logic AND                   |
 |    30    |            `==`  `!=`            | Equality                    |
 |    40    |      `<=` `<` `>=` `>` `in`      | Comparison                  |
