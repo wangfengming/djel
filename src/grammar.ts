@@ -5,7 +5,7 @@ import { TokenType } from './types';
  * priority:
  * see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
  *
- * 10 || (logic or)
+ * 10 || ?? (logic or, nullish coalescing)
  * 20 && (logic and)
  * 30 == != (equality)
  * 40 <= < >= > in (compare)
