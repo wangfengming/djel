@@ -66,7 +66,7 @@ const handlers = {
     }
     context.leftNull = false;
     const key = evaluate(ast.right, context);
-    if (Array.isArray(left) && key < 0) {
+    if ((typeof left === 'string' || Array.isArray(left)) && key < 0) {
       return left[left.length + key];
     }
     return left[key];
