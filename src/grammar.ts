@@ -48,7 +48,9 @@ export const getGrammar = (): Grammar => ({
     '+': {
       priority: 50,
       fn: (left, right) => {
-        if (Array.isArray(left)) return right == null ? left : left.concat(right);
+        if (left == null) return right;
+        if (right == null) return left;
+        if (Array.isArray(left) && Array.isArray(right)) return left.concat(right);
         if (left && typeof left === 'object' || right && typeof right === 'object') {
           return { ...left, ...right };
         }
