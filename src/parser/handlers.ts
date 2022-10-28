@@ -18,17 +18,14 @@ import { FUNCTION_CALL_PRIORITY, MEMBER_PRIORITY, PIPE_PRIORITY } from '../gramm
 import { last, maybeLambda } from '../utils';
 
 /**
- * Handles literal values, such as strings, booleans, and numerics, by adding
- * them as a new node in the AST.
- * @param token A token object
+ * 创建 Literal 节点。
  */
 export function tokenLiteral(this: Parser, token: Token) {
   this.placeAtCursor({ type: AstNodeType.Literal, value: token.literal! });
 }
 
 /**
- * Handles identifier tokens by adding them as a new node in the AST.
- * @param token A token object
+ * 创建 Identifier 节点。如果 token 是 @，表示是简写 lambda 函数的参数。
  */
 export function tokenIdentifier(this: Parser, token: Token) {
   const identifier = token.value;
@@ -41,9 +38,7 @@ export function tokenIdentifier(this: Parser, token: Token) {
 }
 
 /**
- * Handles token of type 'unaryOp', indicating that the operation has only
- * one input: a right side.
- * @param token A token object
+ * 创建 Unary 节点
  */
 export function tokenUnaryOp(this: Parser, token: Token) {
   this.placeAtCursor({
@@ -53,9 +48,7 @@ export function tokenUnaryOp(this: Parser, token: Token) {
 }
 
 /**
- * Handles tokens of type 'binaryOp', indicating an operation that has two
- * inputs: a left side and a right side.
- * @param token A token object
+ * 创建 Binary 节点。需要考虑优先级。
  */
 export function tokenBinaryOp(this: Parser, token: Token) {
   const binaryOp = this._grammar.binaryOps[token.value];
@@ -67,6 +60,10 @@ export function tokenBinaryOp(this: Parser, token: Token) {
   } as BinaryNode);
 }
 
+/**
+ * 创建 Member 节点。需要考虑优先级。
+ * 当前 token 是 `.` 或 `.?`，如果是后者，表示是可选链。
+ */
 export function tokenMember(this: Parser, token: Token) {
   this.rotatePriority(MEMBER_PRIORITY);
   const node = {
@@ -78,10 +75,17 @@ export function tokenMember(this: Parser, token: Token) {
   this.placeBeforeCursor(node);
 }
 
+/**
+ * 处理 Member 的属性节点，即创建 Literal 节点。形如 `a.b` 中的 `b`。
+ */
 export function tokenMemberProperty(this: Parser, token: Token) {
   this.placeAtCursor({ type: AstNodeType.Literal, value: token.value });
 }
 
+/**
+ * 创建 Member 节点。需要考虑优先级。
+ * 当前 token 是 `[` 或 `.?[`，如果是后者，表示是可选链。
+ */
 export function tokenComputedMember(this: Parser, token: Token) {
   this.rotatePriority(MEMBER_PRIORITY);
   const node = {
@@ -94,29 +98,30 @@ export function tokenComputedMember(this: Parser, token: Token) {
   this.placeBeforeCursor(node);
 }
 
+/**
+ * 创建 Def 节点。形如 `def a = 0` 中的 `a`。
+ */
 export function tokenDefName(this: Parser, token: Token) {
   this._defs.push({ name: token.value } as Def);
 }
 
 /**
- * Handles new array literals by adding them as a new node in the AST,
- * initialized with an empty array.
+ * 创建 Array 节点。当前 token 是 `[`
  */
 export function tokenArrayStart(this: Parser) {
   this.placeAtCursor({ type: AstNodeType.Array, value: [] });
 }
 
 /**
- * Handles new object literals by adding them as a new node in the AST,
- * initialized with an empty object.
+ * 创建 Array 节点。当前 token 是 `{`
  */
 export function tokenObjStart(this: Parser) {
   this.placeAtCursor({ type: AstNodeType.Object, entries: [] });
 }
 
 /**
- * Queues a new object literal key to be written once a value is collected.
- * @param token A token object
+ * 处理对象 key 节点。形如 `{x: 1}` 中的 `x`，或者形如 `{'x': 1}` 中的 `'x'`
+ * @param token
  */
 export function tokenObjKey(this: Parser, token: Token) {
   (this._cursor as ObjectNode).entries.push({
@@ -130,9 +135,7 @@ export function tokenObjKey(this: Parser, token: Token) {
 }
 
 /**
- * Handles the start of a new ternary expression by encapsulating the entire
- * AST in a Conditional node, and using the existing tree as the
- * test element.
+ * 创建 Conditional 节点。当前 token 是 `a ? b : c` 中的 `?`
  */
 export function tokenTernaryStart(this: Parser) {
   this._tree = {
@@ -143,10 +146,8 @@ export function tokenTernaryStart(this: Parser) {
 }
 
 /**
- * Handles identifier tokens when used to indicate the name of a transform to
- * be applied, or handles open paren tokens when used to indicate the expression
- * of a function in parens to be called.
- * @param token A token object
+ * 创建 FunctionCall 节点。需要考虑优先级。
+ * 当前 token 是 `a|b` 中的 `b` 或者 `a|(expression)` 中的 `(`
  */
 export function tokenTransform(this: Parser, token: Token) {
   this.rotatePriority(PIPE_PRIORITY);
@@ -161,8 +162,8 @@ export function tokenTransform(this: Parser, token: Token) {
 }
 
 /**
- * handles open paren tokens when used to indicate the expression
- * of a function left on paren to be called.
+ * 创建 FunctionCall 节点。需要考虑优先级。
+ * 当前 token 是 `f()` 中的 `(`，或者 `f.?()` 中的 `.?(` 如果是后者，表示是可选链。
  */
 export function tokenFunctionCall(this: Parser, token: Token) {
   this.rotatePriority(FUNCTION_CALL_PRIORITY);
@@ -177,22 +178,22 @@ export function tokenFunctionCall(this: Parser, token: Token) {
 }
 
 /**
- * Handles a subexpression representing an element of an array literal.
- * @param ast The subexpression tree
+ * 处理数组元组节点，将其添加到数组列表中。
  */
 export function astArrayVal(this: Parser, ast?: AstNode) {
   if (ast) (this._cursor as ArrayNode).value.push(ast);
 }
 
+/**
+ * 处理对象 key 节点。形如 `{[expression]: b}` 中的 `expression`。
+ */
 export function astObjKey(this: Parser, ast?: AstNode) {
   this.assert(ast);
   (this._cursor as ObjectNode).entries.push({ key: ast } as ObjectEntry);
 }
 
 /**
- * Handles an object value by adding its AST to the queued key on the object
- * literal node currently at the cursor.
- * @param ast The subexpression tree
+ * 处理对象 value 节点。
  */
 export function astObjVal(this: Parser, ast?: AstNode) {
   this.assert(ast);
@@ -201,31 +202,32 @@ export function astObjVal(this: Parser, ast?: AstNode) {
 }
 
 /**
- * Handles a completed consequent subexpression of a ternary operator.
- * @param ast The subexpression tree
+ * 处理三元表达式的 `consequent`。
+ * 即 `a ? expression1 : expression2` 中的 `expression1`
  */
 export function astTernaryMid(this: Parser, ast?: AstNode) {
   (this._cursor as ConditionalNode).consequent = ast;
 }
 
 /**
- * Handles a completed alternate subexpression of a ternary operator.
- * @param ast The subexpression tree
+ * 处理三元表达式的 `alternate`。
+ * 即 `a ? expression1 : expression2` 中的 `expression2`
  */
 export function astTernaryEnd(this: Parser, ast?: AstNode) {
   this.assert(ast);
   (this._cursor as ConditionalNode).alternate = ast;
 }
 
+/**
+ * 处理变量定义。即 `def a = expression` 中的 `expression`
+ */
 export function astDefVal(this: Parser, ast?: AstNode) {
   this.assert(ast);
   last(this._defs).value = maybeLambda(ast);
 }
 
 /**
- * Handles a completed subexpression of a transform to be called.
- * This can be a function in context or can be a Lambda expression.
- * @param ast The subexpression tree
+ * 处理管道表达式的函数。即 `a|(expression)` 中的 `expression`。
  */
 export function astExprTransform(this: Parser, ast?: AstNode) {
   this.assert(ast);
@@ -234,8 +236,7 @@ export function astExprTransform(this: Parser, ast?: AstNode) {
 }
 
 /**
- * Handles a subexpression that's used to define a transform argument's value.
- * @param ast The subexpression tree
+ * 处理函数参数。
  */
 export function astArgVal(this: Parser, ast?: AstNode) {
   this._lambda = false;
@@ -243,9 +244,7 @@ export function astArgVal(this: Parser, ast?: AstNode) {
 }
 
 /**
- * Handles traditional subexpressions, delineated with the groupStart and
- * groupEnd elements.
- * @param ast The subexpression tree
+ * 处理子表达式。即 `(expression)` 中的 `expression`。
  */
 export function astSubExp(this: Parser, ast?: AstNode) {
   this.assert(ast);
@@ -253,8 +252,7 @@ export function astSubExp(this: Parser, ast?: AstNode) {
 }
 
 /**
- * Handles a subexpression used for member access an object.
- * @param ast The subexpression tree
+ * 处理计算属性表达式。即 `a[expression]` 中的 `expression`
  */
 export function astComputedMemberProperty(this: Parser, ast?: AstNode) {
   this.assert(ast);

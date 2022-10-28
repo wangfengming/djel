@@ -271,7 +271,8 @@ describe('Evaluator', () => {
     it('should apply transforms', () => {
       const variables = { foo: 10 };
       const half = (val: number) => val / 2;
-      expect(evaluate('foo|half + 3', variables, { half })).to.equal(8);
+      const transforms = { half };
+      expect(evaluate('foo|half + 3', variables, transforms)).to.equal(8);
     });
     it('should apply data function transforms', () => {
       const variables = {
@@ -288,7 +289,8 @@ describe('Evaluator', () => {
     });
     it('should apply a transform with multiple args', () => {
       const concat = (val: string, a1: string, a2: string, a3: string) => val + ': ' + a1 + a2 + a3;
-      expect(evaluate('"foo"|concat("baz", "bar", "tek")', null, { concat }))
+      const transforms = { concat };
+      expect(evaluate('"foo"|concat("baz", "bar", "tek")', null, transforms))
         .to.equal('foo: bazbartek');
     });
     it('should throw when transform does not exist', () => {
@@ -303,7 +305,8 @@ describe('Evaluator', () => {
         },
       };
       const filter = (arr: any[], fn: (i: any) => any) => arr.filter(fn);
-      expect(evaluate('foo.bar|filter(@.tek == "baz")', variables, { filter }))
+      const transforms = { filter };
+      expect(evaluate('foo.bar|filter(@.tek == "baz")', variables, transforms))
         .to.deep.equal([{ tek: 'baz' }]);
     });
     it('should map arrays', () => {
@@ -313,7 +316,8 @@ describe('Evaluator', () => {
         },
       };
       const map = (arr: any[], fn: (i: any) => any) => arr.map(fn);
-      expect(evaluate('foo.bar|map({tek: "1"+(@.tek||@.tok)})', variables, { map }))
+      const transforms = { map };
+      expect(evaluate('foo.bar|map({tek: "1"+(@.tek||@.tok)})', variables, transforms))
         .to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
     });
     it('should reduce arrays', () => {
@@ -323,7 +327,72 @@ describe('Evaluator', () => {
         },
       };
       const sum = <T>(arr: T[], by: (i: T) => number) => arr.reduce((n, i) => n + (by(i) || 0), 0);
-      expect(evaluate('-(foo.bar|sum(@.x))', variables, { sum })).to.equal(-6);
+      const transforms = { sum };
+      expect(evaluate('-(foo.bar|sum(@.x))', variables, transforms)).to.equal(-6);
+    });
+  });
+  describe('Function Call', () => {
+    it('should apply function of transforms', () => {
+      const variables = { foo: 10 };
+      const half = (val: number) => val / 2;
+      const transforms = { half };
+      expect(evaluate('half(foo) + 3', variables, transforms)).to.equal(8);
+    });
+    it('should apply function of variables', () => {
+      const variables = {
+        foo: 10,
+        double: (v: number) => v * 2,
+        fns: {
+          half: (v: number) => v / 2,
+        },
+      };
+      expect(evaluate('double(foo) + 3', variables)).to.equal(23);
+      expect(evaluate('fns.half(foo) + 3', variables)).to.equal(8);
+      expect(evaluate('fns["half"](foo) + 3', variables)).to.equal(8);
+      expect(evaluate('fns["ha" + "lf"](foo) + 3', variables)).to.equal(8);
+    });
+    it('should apply with multiple args', () => {
+      const concat = (val: string, a1: string, a2: string, a3: string) => val + ': ' + a1 + a2 + a3;
+      const transforms = { concat };
+      expect(evaluate('concat("foo", "baz", "bar", "tek")', null, transforms))
+        .to.equal('foo: bazbartek');
+    });
+    it('should throw when does not exist', () => {
+      const variables = {};
+      expect(() => evaluate('world("hello")', variables)).to
+        .throw('undefined is not a function');
+    });
+    it('should filter arrays', () => {
+      const variables = {
+        foo: {
+          bar: [{ tek: 'hello' }, { tek: 'baz' }, { tok: 'baz' }],
+        },
+      };
+      const filter = (arr: any[], fn: (i: any) => any) => arr.filter(fn);
+      const transforms = { filter };
+      expect(evaluate('filter(foo.bar,@.tek == "baz")', variables, transforms))
+        .to.deep.equal([{ tek: 'baz' }]);
+    });
+    it('should map arrays', () => {
+      const variables = {
+        foo: {
+          bar: [{ tek: 'hello' }, { tek: 'baz' }, { tok: 'baz' }],
+        },
+      };
+      const map = (arr: any[], fn: (i: any) => any) => arr.map(fn);
+      const transforms = { map };
+      expect(evaluate('map(foo.bar,{tek: "1"+(@.tek||@.tok)})', variables, transforms))
+        .to.deep.equal([{ tek: '1hello' }, { tek: '1baz' }, { tek: '1baz' }]);
+    });
+    it('should reduce arrays', () => {
+      const variables = {
+        foo: {
+          bar: [{ x: 1 }, { x: 2 }, { x: 3 }],
+        },
+      };
+      const sum = <T>(arr: T[], by: (i: T) => number) => arr.reduce((n, i) => n + (by(i) || 0), 0);
+      const transforms = { sum };
+      expect(evaluate('-(sum(foo.bar,@.x))', variables, transforms)).to.equal(-6);
     });
   });
   describe('Lambda', () => {
@@ -345,6 +414,12 @@ describe('Evaluator', () => {
       expect(evaluate('fns.half(foo) + 3', variables)).to.equal(8);
       expect(evaluate('fns["half"](foo) + 3', variables)).to.equal(8);
       expect(evaluate('fns["ha" + "lf"](foo) + 3', variables)).to.equal(8);
+    });
+    it('should call transform', () => {
+      const variables = { foo: 10 };
+      const half = (v: number) => v / 2;
+      const transforms = { half };
+      expect(evaluate('half(foo) + 3', variables, transforms)).to.equal(8);
     });
     it('should throw when function does not exist', () => {
       const variables = {};

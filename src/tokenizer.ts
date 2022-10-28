@@ -4,45 +4,10 @@ import { last } from './utils';
 
 const ID_REGEX = /[a-zA-Z_$][a-zA-Z\d_$]*|@\d?/;
 
-/**
- * Tokenizer is a collection of stateless, statically-accessed functions for the
- * lexical parsing of a string. Its responsibility is to identify the
- * "parts of speech" of an expression, and tokenize and label each, but
- * to do only the most minimal syntax checking; the only errors the Lexer
- * should be concerned with are if it's unable to identify the utility of
- * its tokens. Errors stemming from these tokens not being in a
- * sensible configuration should be left for the Parser to handle.
- *
- * @param grammar grammar map object of symbols, unary operators and binary operators
- */
 export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
   let _grammar = grammar;
   let _regexp: RegExp | undefined;
 
-  /**
-   * Converts a string into an array of tokens. Each token is an object
-   * in the following format:
-   *
-   *     {
-   *         type: <string>,
-   *         value: <boolean|number|string>,
-   *         raw: <string>
-   *     }
-   *
-   * Type is one of the following:
-   *
-   *      literal, identifier, binaryOp, unaryOp
-   *
-   * OR, if the token is a control character its type is the name of the element
-   * defined in the Grammar.
-   *
-   * Value is the value of the token in the correct type (boolean or numeric as
-   * appropriate). Raw is the string representation of this value taken directly
-   * from the expression string, including any trailing spaces.
-   * @param {string} str The string to be tokenized
-   * @returns an array of token objects.
-   * @throws {Error} if the provided string contains an invalid token.
-   */
   const tokenize = (str: string) => {
     if (!_regexp) {
       const tokenNames = Object.keys(_grammar.symbols)
@@ -58,10 +23,6 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
     return tokens;
   };
 
-  /**
-   * update grammar when add/remove operators or transforms
-   * @param newGrammar new grammar object
-   */
   const updateGrammar = (newGrammar: Omit<Grammar, 'transforms'>) => {
     _grammar = newGrammar;
     _regexp = undefined;
@@ -73,16 +34,6 @@ export function Tokenizer(grammar: Omit<Grammar, 'transforms'>) {
   };
 }
 
-/**
- * Converts an array of expression elements into an array of tokens.
- * The resulting array may not equal the element array in length, as any
- * elements that consist only of whitespace get appended to the previous
- * token's "raw" property.
- * @param {string[]} elements An array of expression elements to be
- *      converted to tokens
- * @param grammar grammar map object of symbols, unary operators and binary operators
- * @returns an array of token objects.
- */
 function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
   const tokens: Token[] = [];
 
@@ -100,15 +51,6 @@ function getTokens(elements: string[], grammar: Omit<Grammar, 'transforms'>) {
   return tokens;
 }
 
-/**
- * Creates a new token object from an element of a string.
- * @param {string} element The element from which a token should be made
- * @param grammar grammar map object of symbols, unary operators and binary operators
- * @param {boolean} preferUnaryOp operators like `-`, `+` can be both unary and binary.
- *  should treat the operator as unary operator if `preferUnaryOp` is `true`
- * @returns a token object describing the provided element.
- * @throws {Error} if the provided string is not a valid expression element.
- */
 function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, preferUnaryOp: boolean) {
   const token: Token = {
     type: TokenType.literal,
@@ -149,12 +91,6 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
   return token;
 }
 
-/**
- * Determines whether the `-`/`+`/`!` token should be interpreted as a
- * unary operator, given an array of tokens already processed.
- * @param tokens the tokens already processed.
- * @returns {boolean} true if the token should be interpreted as a unary operator.
- */
 function checkIsPreferUnaryOp(tokens: Token[]) {
   if (!tokens.length) return true;
   const lastType = last(tokens).type;
@@ -169,16 +105,6 @@ function checkIsPreferUnaryOp(tokens: Token[]) {
     || TokenType.semi === lastType;
 }
 
-/**
- * Removes the beginning and trailing quotes from a string, unescapes any
- * escaped quotes on its interior, and unescapes any escaped escape characters.
- * Note that this function is not defensive; it assumes that the provided
- * string is not empty, and that its first and last characters are actually
- * quotes.
- * @param {string} str A string whose first and last characters are quotes
- * @returns {string} a string with the surrounding quotes stripped and escapes
- *      properly processed.
- */
 function unquote(str: string) {
   const quote = str[0];
   return str
@@ -187,12 +113,6 @@ function unquote(str: string) {
     .replace(/\\\\/g, '\\');
 }
 
-/**
- * Gets a RegEx object appropriate for splitting a string into its core
- * elements.
- * @param {string[]} tokenNames an array of token names from grammar
- * @returns {RegExp} An element-splitting RegExp object
- */
 function createRegexp(tokenNames: string[]) {
   const preOpRegexElems = [
     // Strings
@@ -225,11 +145,8 @@ function createRegexp(tokenNames: string[]) {
 }
 
 /**
- * Escapes a string so that it can be treated as a string literal within a
- * regular expression.
+ * 转义正则表达式特殊符号。
  * See https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
- * @param {string} str The string to be escaped
- * @returns {string} the RegExp-escaped string.
  */
 function escapeRegExp(str: string) {
   let result = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

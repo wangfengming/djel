@@ -1,10 +1,10 @@
 # Djel (djexl-js)
 
-Dynamic javascript Expression Language: Powerful context-based expression parser and evaluator.
+Dynamic javascript Expression Language: 一个简单的表达式解析求值器.
 
 `Djel` is a fork of [Jexl](https://github.com/TomFrost/Jexl).
 
-## Quick start
+## 快速开始
 
 ```javascript
 const Djel = require('djexl-js').default;
@@ -16,7 +16,7 @@ djel.addTransforms({
   find: (arr, by) => arr.find(by),
 });
 
-const context = {
+const variables = {
   name: { first: 'Sterling', last: 'Archer' },
   assoc: [
     { first: 'Lana', last: 'Kane' },
@@ -29,30 +29,30 @@ const context = {
 let res;
 
 // find in an array
-res = djel.evaluate('assoc|find(@.first == "Lana").last', context);
+res = djel.evaluate('assoc|find(@.first == "Lana").last', variables);
 console.log(res); // Output: Kane
 
 // Do math
-res = djel.evaluate('age * (3 - 1)', context);
+res = djel.evaluate('age * (3 - 1)', variables);
 console.log(res); // Output: 72
 
 // Concatenate
-res = djel.evaluate('name.first + " " + name["la" + "st"]', context);
+res = djel.evaluate('name.first + " " + name["la" + "st"]', variables);
 console.log(res); // Output: Sterling Archer
 
 // Compound
-res = djel.evaluate('assoc|find(@.last == "Figgis").first == "Cyril" && assoc|find(@.last == "Poovey").first == "Pam"', context);
+res = djel.evaluate('assoc|find(@.last == "Figgis").first == "Cyril" && assoc|find(@.last == "Poovey").first == "Pam"', variables);
 console.log(res); // Output: true
 
 // Use array indexes
-res = djel.evaluate('assoc[1]', context);
+res = djel.evaluate('assoc[1]', variables);
 console.log(res.first + ' ' + res.last); // Output: Cyril Figgis
 
 // Use conditional logic
-res = djel.evaluate('age > 62 ? "retired" : "working"', context);
+res = djel.evaluate('age > 62 ? "retired" : "working"', variables);
 console.log(res); // Output: working
 
-res = djel.evaluate('"duchess"|upper + " " + name.last|upper', context);
+res = djel.evaluate('"duchess"|upper + " " + name.last|upper', variables);
 console.log(res); // Output: DUCHESS ARCHER
 
 // Add your own operators
@@ -67,120 +67,101 @@ res = djel.evaluate('"Guest" _= "gUeSt"');
 console.log(res); // Output: true
 ```
 
-## Installation
-
-For Node.js or Web projects, type this in your project folder:
+## 安装使用
 
 ```bash
 yarn add djexl-js
 ```
 
-Access `Djel` the same way, backend or front:
-
 ```javascript
 import Djel from 'djexl-js';
 ```
 
-## All the details
+## 一元操作符
 
-### Unary Operators
+| 操作符 | 符号  |
+|-----|:---:|
+| 取反  | `!` |
+| 加号  | `+` |
+| 减号  | `-` |
 
-| Operation      | Symbol |
-|----------------|:------:|
-| Negate         |  `!`   |
-| Unary plus     |  `+`   |
-| Unary negation |  `-`   |
+## 二元操作符
 
-### Binary Operators
+| 操作符            |      符号      |
+|----------------|:------------:|
+| 加号，字符串/数组/对象拼接 |     `+`      |
+| 减              |     `-`      |
+| 乘              |     `*`      |
+| 除              |     `/`      |
+| 整除             |     `//`     |
+| 取模             |     `%`      |
+| 指数             |     `^`      |
+| 逻辑与            |     `&&`     |
+| 逻辑或            | &#124;&#124; |
+| 空值合并           |     `??`     |
 
-| Operation                  |    Symbol    |
-|----------------------------|:------------:|
-| Add, Concat Strings/Arrays |     `+`      |
-| Subtract                   |     `-`      |
-| Multiply                   |     `*`      |
-| Divide                     |     `/`      |
-| Divide and floor           |     `//`     |
-| Modulus                    |     `%`      |
-| Power of                   |     `^`      |
-| Logical AND                |     `&&`     |
-| Logical OR                 | &#124;&#124; |
-| Nullish coalescing         |     `??`     |
+- `+` 支持数组/对象拼接
 
-#### Concat Arrays/Objects use `+`
-
-| Expression    | Result      |
+| 表达式           | 结果          |
 |---------------|-------------|
 | `[1,2]+[3,4]` | `[1,2,3,4]` |
 | `{x:1}+{y:2}` | `{x:1,y:2}` |
 
-### Comparisons
+## 比较
 
-| Comparison                 | Symbol |
-|----------------------------|:------:|
-| Equal                      |  `==`  |
-| Not equal                  |  `!=`  |
-| Greater than               |  `>`   |
-| Greater than or equal      |  `>=`  |
-| Less than                  |  `<`   |
-| Less than or equal         |  `<=`  |
-| Element in array or string |  `in`  |
+| 操作符  |  符号  |
+|------|:----:|
+| 相等   | `==` |
+| 不等   | `!=` |
+| 大于   | `>`  |
+| 大于等于 | `>=` |
+| 小于   | `<`  |
+| 小于等于 | `<=` |
+| in   | `in` |
 
-#### A note about `in`:
+- 关于 `in`:
 
-The `in` operator can be used to check for a substring:
-`"Cad" in "Ron Cadillac"`, and it can be used to check for an array element:
-`"coarse" in ['fine', 'medium', 'coarse']`.
+`in` 操作符可以检查字字符串，如：`"Cad" in "Ron Cadillac"`。
 
-However, the `===` operator is used
-behind-the-scenes to search arrays, so it should not be used with arrays of
-objects.
-The following expression returns false: `{a: 'b'} in [{a: 'b'}]`.
+也可以用于检查元素是否在数组中，如：`"coarse" in ['fine', 'medium', 'coarse']`，但是这个判断是使用引用比较，因此 `{a: 'b'} in [{a: 'b'}]` 的结果是 `false`。
 
-### Ternary operator
+## 三元表达式
 
-Conditional expressions check to see if the first segment evaluates to a truthy
-value. If so, the consequent segment is evaluated. Otherwise, the alternate
-is. If the consequent section is missing, the test result itself will be used
-instead.
-
-| Expression                          | Result     |
+| 表达式                                 | 结果         |
 |-------------------------------------|------------|
 | `"" ? "Full" : "Empty"`             | `"Empty"`  |
 | `"foo" in "foobar" ? "Yes" : "No"`  | `"Yes"`    |
 | `{agent: "Archer"}.agent ?: "Kane"` | `"Archer"` |
 
-### Native Types
+## 类型
 
-| Type     |              Examples              |
-|----------|:----------------------------------:|
-| Booleans |          `true`, `false`           |
-| Strings  | `"Hello \"user\""`, `'Hey there!'` |
-| Numerics |    `6`, `-7.2`, `5`, `-3.14159`    |
-| Objects  |        `{hello: "world!"} `        |
-| Arrays   |       `['hello', 'world!']`        |
+| 类型      |                 示例                 |
+|---------|:----------------------------------:|
+| Boolean |          `true`, `false`           |
+| String  | `"Hello \"user\""`, `'Hey there!'` |
+| Number  |    `6`, `-7.2`, `5`, `-3.14159`    |
+| Object  |        `{hello: "world!"} `        |
+| Array   |       `['hello', 'world!']`        |
 
-### Groups
+## 分组
 
-Parentheses work just how you'd expect them to:
+小括号 `()` 按照你预期的方式使用即可。
 
-| Expression                          | Result |
+| 表达式                                 | 结果     |
 |-------------------------------------|:-------|
 | `(83 + 1) / 2`                      | `42`   |
 | 1 < 3 && (4 > 2 &#124;&#124; 2 > 4) | `true` |
 
-### Identifiers
+## 标识符
 
-Access variables in the context object by just typing their name. Objects can
-be traversed with dot notation, or by using brackets to traverse to a dynamic
-property name.
+使用变量名访问变量，使用 `.` 或 `[]` 访问对象属性值。
 
-The optional chaining operator (`?.`) accesses an object's property or calls a function.
-If the object is `undefined` or `null`, it returns `undefined` instead of throwing an error.
+可选链运算符（`?.` `?.[]` `?.()`）在引用为空 (`null` 或者 `undefined`) 的情况下不会引起错误，该表达式短路返回 `undefined`。
 
-Example context:
+示例变量 :
 
 ```javascript
-{
+const vairables = {
   name: {
     first: "Malory",
     last: "Archer"
@@ -194,7 +175,7 @@ Example context:
 }
 ```
 
-| Expression          | Result            |
+| 表达式                 | 结果                |
 |---------------------|-------------------|
 | `name.first`        | `"Malory"`        |
 | `name["first"]`     | `"Malory"`        |
@@ -205,28 +186,46 @@ Example context:
 | `exes[-2]`          | `"Len Trexler"`   |
 | `foo?.bar.baz`      | `undefined`       |
 
-#### A note about array index:
+- 关于 `[-1]`:
 
-You can use a negative number to index an array in the end side.
+你可以使用负数在数组或字符串尾部获取元组或字符。如 `a[-1]` 表示最后一个元素或者字符。
 
-### Define local variables
+## 定义变量
 
-You can use `def` keyword to define local variables. The `def` in sub-expression has a local scope. And `def` can
-override the `Context` variables in its local scope.
+你可以使用 `def` 关键词定义变量，改变量有一个局部作用域，它也可以覆盖通过 `variables` 设置的变量。
 
-| Expression                                                        | Result |
-|-------------------------------------------------------------------|--------|
-| `def a = 1; def b = a + 1; a + b`                                 | 3      |
-| `def a = 1; (true ? (def a = 10; a) : 0) + a`                     | 11     |
-| with context: `{ a: 1 }` <br/> `(true ? (def a = 10; a) : 0) + a` | 11     |
+| 表达式                                                                         | 结果  |
+|-----------------------------------------------------------------------------|-----|
+| `def a = 1; def b = a + 1; a + b`                                           | 3   |
+| `def a = 1; (true ? (def a = 10; a) : 0) + a`                               | 11  |
+| 使用变量: `const variables = { a: 1 }` <br/> `(true ? (def a = 10; a) : 0) + a` | 11  |
 
-### Transform
+## 函数调用
 
-The power of `Djel` is in transforming data.
-Transform functions take one or more arguments: The value to be transformed,
-followed by anything else passed to it in the expression.
+你可以像在 js 中一样调用函数，但是该函数必须定义在 `variables` 中。
+比如变量如下：
 
-Add them with `djel.addTransforms`.
+```javascript
+const variables = { foo: 10, fns: { half: (v) => v / 2 } };
+```
+
+| 表达式                    | 结果  |
+|------------------------|-----|
+| `fns.half(foo) + 3`    | 8   |
+| `fns["half"](foo) + 3` | 8   |
+
+## 管道
+
+管道是函数调用的语法糖。
+形如 `fn(a)` 的函数调用可以简写成 `a|fn` 或者 `a|fn()` 的方式；
+形如 `fn(a,b,c)` 的函数调用可以简写成 `a|fn(b,c)` 的方式。
+这对多次函数调用非常有帮助，如 `fn3(fn2(fn1(v)))` 可以写成 `v|fn1|fn2|fn3`。
+
+但是需要注意，`v|a.b.c` 等价于 `a(v).b.c` 而不是 `a.b.c(v)`，`a.b.c(v)` 的管道形式是 `v|(a.b.c)`
+
+## 特殊函数注入方式
+
+除了使用 `variables` 的方式注入函数外，还可以使用 `djel.addTransforms` 注入函数，如：
 
 ```javascript
 djel.addTransforms({
@@ -235,55 +234,33 @@ djel.addTransforms({
 });
 ```
 
-| Expression                                 | Result                  |
+| 表达式                                        | 结果                      |
 |--------------------------------------------|-------------------------|
 | "Pam Poovey"&#124;lower&#124;split(' ')[1] | `"poovey"`              |
-| "password==guest"&#124;split('=' + '=')    | `['password', 'guest']` |
+| "password==guest"&#124;split('==')         | `['password', 'guest']` |
+| `split("password==guest", '==')`           | `['password', 'guest']` |
 
-#### A function in Context can be a Transform
+## 简版函数定义 Lambda
 
-Example context:
-
-```javascript
-{
-  data: 'Pam Poovey',
-  lower: (val) => val.toLowerCase(),
-}
-```
-
-| Expression        | Result         |
-|-------------------|----------------|
-| data&#124;(lower) | `"pam poovey"` |
-
-Note that you should add a pair of parentheses if the function not in root context.
-
-### Lambda
-
-You can define a `Lambda` in a `Transform`. A `Lambda` can either be a `Transform` or be a `Transform` argument.
-
-In a `Lambda` expression, `@` or `@0` means the first argument of the function call.
-And `@1` to `@9` means the second to tenth argument.
-
-Example:
+在函数调用的参数中，或者在管道函数表达式中，可以使用 `@` `@0` `@1` ~ `@9` 的特殊标识符来定义一个简版函数。
+`@` `@0` 表示第 0 个函数参数，`@1` ~ `@9` 分别表示 第 2 ~ 10 个函数参数。比如：
 
 ```
 @.x + @1
 ```
 
-means
+表示
 
 ```javascript
 (...args) => args[0].x + args[1]
 ```
 
-Note that `Lambda` can only define as a `Transform` or a `Transform` argument. And `Lambda` cannot nest.
+注意，简版函数只可以定义在函数调用参数中，或者管道函数表达式中。
 
-#### A `Lambda` as a `Transform` argument
-
-Example context:
+- 定义在函数调用参数中
 
 ```javascript
-{
+const variables = {
   users: [
     { age: 18, name: "Nikolai Jakov" },
     { age: 17, name: "Len Trexler" },
@@ -300,43 +277,54 @@ djel.addTransforms({
 });
 ```
 
-| Expression                         | Result                               |
+| 表达式                                | 结果                                   |
 |------------------------------------|--------------------------------------|
 | users&#124;filter(@.age<18)        | `[{ age: 17, name: "Len Trexler" }]` |
 | users&#124;map(@.age)              | `[18,17,19]`                         |
 | users&#124;sum(@.age)/users.length | `18`                                 |
+| `filter(users,@.age<18)`           | `[{ age: 17, name: "Len Trexler" }]` |
+| `map(users,@.age)`                 | `[18,17,19]`                         |
+| `sum(users,@.age)/users.length`    | `18`                                 |
 
-### A `Lambda` as a `Transform`
+- 定义在管道函数表达式中
 
-| Expression            | Result   |
+| 表达式                   | 结果       |
 |-----------------------|----------|
 | (1+2+3)&#124;({x:@}}) | `{x: 6}` |
 
-### Context
+## 注入变量
 
-Variable contexts are straightforward Javascript objects that can be accessed
-in the expression.
+求值时，可以注入变量。如
 
-### API
+```javascript
+const variables = { age: 10 };
 
-#### Djel
+djel.evaluate('age * (3 - 1)', variables); // => 20
 
-A reference to the `Djel`. To maintain separate instances of `Djel`
-with each maintaining its own set of transforms, simply re-instantiate with
+// 或者
+const expression = djel.compile('age * (3 - 1)');
+expression.evaluate(variables); // => 20
+```
+
+## API
+
+### Djel
+
+使用 `Djel` 可以创建一个实例，在这个实例你可以单独注入函数，定义、删除操作符等。
 
 ```javascript
 const djel = Djel()
 ```
 
-#### evaluate
+### evaluate
 
 ```typescript
-evaluate: (exp: string, context?: any) => any
+evaluate: (exp: string, variables?: any) => any
 ```
 
-Evaluates an expression. The context are optional.
+计算一个表达式，`variables` 是可选的。
 
-#### compile
+### compile
 
 ```typescript
 compile: (exp: string) => {
@@ -344,11 +332,16 @@ compile: (exp: string) => {
 }
 ```
 
-Compile an expression. The returned object can
-then be evaluated multiple times with different contexts,
-without generating any additional string processing overhead.
+你可以先编译一个表达式，之后使用编译结果在不同变量上进行求值。如：
 
-#### addBinaryOps
+```javascript
+const expression = djel.compile('a+b');
+
+expression.evaluate({ a: 1, b: 2 }); // => 3
+expression.evaluate({ a: 3, b: 4 }); // => 7
+```
+
+### addBinaryOps
 
 ```typescript
 addBinaryOps: (binaryOps: Record<string, {
@@ -357,29 +350,25 @@ addBinaryOps: (binaryOps: Record<string, {
 }>) => void
 ```
 
-Adds a binary operator to the `Djel` instance. A binary operator is one that
-considers the values on both its `left` and `right`, such as `"+"` or `"=="`, in order
-to calculate a result. The `priority` determines the operator's position in the
-order of operations. The provided function will be called with two arguments:
-a `left` value and a `right` value.
+在 `Djel` 实例中添加二元操作符。二元操作符需要考虑其左值和右值，如 `"+"` 或 `"=="`。
+`priority` 属性决定了该操作符的优先级。
 
-The `priority` of existing operators (please refer to `src/grammar.ts`).
+内置操作符的优先级如下表（见源码 `src/grammar.ts`）：
 
-| Priority |             Symbols              | Operators                   |
-|:--------:|:--------------------------------:|-----------------------------|
-|    10    |           &#124;&#124;           | Logic OR                    |
-|    10    |               `??`               | Nullish coalescing          |
-|    20    |               `&&`               | Logic AND                   |
-|    30    |            `==`  `!=`            | Equality                    |
-|    40    |      `<=` `<` `>=` `>` `in`      | Comparison                  |
-|    50    |             `+` `-`              | Add, Concat, Subtract       |
-|    60    |         `*` `/` `//` `%`         | Multiply, Divide, Modulus   |
-|    70    |               `^`                | Power of                    |
-|    80    |              &#124;              | Transform                   |
-|    90    |           `!` `+` `-`            | Unary                       |
-|   100    | `[]` `.` `()` `?.[]` `?.` `?.()` | Member access/Function Call |
+| 优先级 |                 符合                  | 操作符       |
+|:---:|:-----------------------------------:|-----------|
+| 10  |          &#124;&#124; `??`          | 逻辑或，空值合并  |
+| 20  |                `&&`                 | 逻辑与       |
+| 30  |             `==`  `!=`              | 相等        |
+| 40  |       `<=` `<` `>=` `>` `in`        | 比较        |
+| 50  |               `+` `-`               | 加、拼接、减    |
+| 60  |          `*` `/` `//` `%`           | 乘、除、整除、取余 |
+| 70  |                 `^`                 | 指数        |
+| 80  |               &#124;                | 管道        |
+| 90  |             `!` `+` `-`             | 一元操作符     |
+| 100 |  `[]` `.` `()` `?.[]` `?.` `?.()`   | 属性访问，函数调用 |
 
-#### addUnaryOps
+### addUnaryOps
 
 ```typescript
 addUnaryOps: (unaryOps: Record<string, {
@@ -388,36 +377,32 @@ addUnaryOps: (unaryOps: Record<string, {
 }>) => void
 ```
 
-Adds a unary operator to the `Djel` instance. A unary operator is one that
-considers only the value on its `right`, such as `"!"`, in order to calculate a
-result. The provided function will be called with one argument: the value to
-the operator's `right`.
+在 `Djel` 实例中添加一元操作符。一元操作符只需要考虑其右值，如 `"!"`。
+`priority` 属性决定了该操作符的优先级。
 
-#### addTransforms
+### addTransforms
 
 ```typescript
 addTransforms: (transforms: Record<string, Function>) => void
 ```
 
-Adds a transform function to this `Djel` instance. See the **Transform**
-section above for information on the structure of a transform function.
+在 `Djel` 实例中注入函数。
 
-#### removeOp
+### removeOp
 
 ```typescript
 removeOp: (operator: string) => void
 ```
 
-Removes a binary or unary operator from the `Djel` instance.
-For example, `"^"` can be passed to eliminate the "power of" operator.
+在 `Djel` 实例中移除操作符。如 `djel.removeOp('^')` 可以移除指数操作符。
 
-#### removeTransform
+### removeTransform
 
 ```typescript
 removeTransform: (transformName: string) => void
 ```
 
-Removes a transform function from the `Djel` instance.
+在 `Djel` 实例中移除注入的函数。
 
 ## License
 

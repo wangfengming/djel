@@ -21,9 +21,6 @@ export const PIPE_PRIORITY = 80;
 export const MEMBER_PRIORITY = 100;
 export const FUNCTION_CALL_PRIORITY = 100;
 
-/**
- * A map of all expression elements to their properties.
- */
 export const getGrammar = (): Grammar => ({
   symbols: {
     '[': { type: TokenType.openBracket },
