@@ -56,7 +56,7 @@ import {
  * in a thrown Error.
  */
 
-const expectBinOpTokenTypes: State['tokens'] = {
+const expectBinOpTokens: State['tokens'] = {
   [TokenType.binaryOp]: { toState: StateType.expectOperand, handler: tokenBinaryOp },
   [TokenType.openBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
   [TokenType.optionalBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
@@ -81,7 +81,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.expectBinOp]: {
-    tokens: expectBinOpTokenTypes,
+    tokens: expectBinOpTokens,
     completable: true,
   },
   [StateType.member]: {
@@ -121,7 +121,7 @@ export const states: Record<StateType, State> = {
   },
   [StateType.postTransform]: {
     tokens: {
-      ...expectBinOpTokenTypes,
+      ...expectBinOpTokens,
       [TokenType.openParen]: { toState: StateType.argVal },
       [TokenType.optionalParen]: undefined,
     },

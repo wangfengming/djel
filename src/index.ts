@@ -11,8 +11,8 @@ export type { BinaryOpGrammar, DelayBinaryOpGrammar, UnaryOpGrammar } from './ty
  * evaluating basic to complex expression strings into native Javascript objects.
  */
 export default function Djel() {
-  let grammar = getGrammar();
-  let tokenizer = Tokenizer(grammar);
+  const grammar = getGrammar();
+  const tokenizer = Tokenizer(grammar);
 
   /**
    * Compile a string expression. The returned object can then be
@@ -78,7 +78,7 @@ export default function Djel() {
   /**
    * Adds or replaces transform functions in this Djel instance.
    */
-  const addTransforms = (transforms: Record<string, Function>) => {
+  const addTransforms = (transforms: Record<string, (...args: any[]) => any>) => {
     grammar.transforms = { ...grammar.transforms, ...transforms };
   };
 

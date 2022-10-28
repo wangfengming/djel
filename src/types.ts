@@ -27,7 +27,7 @@ export interface Grammar {
   symbols: Record<string, SymbolGrammar>;
   unaryOps: Record<string, UnaryOpGrammar>;
   binaryOps: Record<string, BinaryOpGrammar | DelayBinaryOpGrammar>;
-  transforms: Record<string, Function>;
+  transforms: Record<string, (...args: []) => any>;
 }
 
 export interface Token {

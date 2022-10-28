@@ -5,7 +5,7 @@ import { Parser } from '../src/parser';
 import { evaluate as _evaluate } from '../src/evaluator';
 
 describe('Evaluator', () => {
-  const evaluate = (exp: string, variables?: any, transforms?: Record<string, Function>) => {
+  const evaluate = (exp: string, variables?: any, transforms?: Record<string, (...args: any[]) => any>) => {
     const grammar = getGrammar();
     grammar.transforms = { ...grammar.transforms, ...transforms };
     const tokenizer = Tokenizer(grammar);
