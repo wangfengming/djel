@@ -819,7 +819,7 @@ describe('Parser', () => {
         left: {
           type: AstNodeType.FunctionCall,
           func: {
-            type: AstNodeType.Lambda,
+            type: AstNodeType.Function,
             expr: {
               type: AstNodeType.Binary,
               operator: '>',
@@ -845,7 +845,7 @@ describe('Parser', () => {
         args: [
           { type: AstNodeType.Identifier, value: 'arr' },
           {
-            type: AstNodeType.Lambda,
+            type: AstNodeType.Function,
             expr: {
               type: AstNodeType.Conditional,
               test: {

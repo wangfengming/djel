@@ -42,26 +42,26 @@ export interface Token {
 
 export const enum TokenType {
   openBracket = 1,
-  optionalBracket,
-  closeBracket,
-  openCurly,
-  closeCurly,
-  openParen,
-  optionalParen,
-  closeParen,
-  dot,
-  optionalDot,
-  colon,
-  comma,
-  question,
-  pipe,
-  def,
-  assign,
-  semi,
-  binaryOp,
-  unaryOp,
-  identifier,
-  literal,
+  optionalBracket = 2,
+  closeBracket = 3,
+  openCurly = 4,
+  closeCurly = 5,
+  openParen = 6,
+  optionalParen = 7,
+  closeParen = 8,
+  dot = 9,
+  optionalDot = 10,
+  colon = 11,
+  comma = 12,
+  question = 13,
+  pipe = 14,
+  def = 15,
+  assign = 16,
+  semi = 17,
+  binaryOp = 18,
+  unaryOp = 19,
+  identifier = 20,
+  literal = 21,
 }
 
 export type AstNode =
@@ -74,7 +74,7 @@ export type AstNode =
   | ObjectNode
   | ConditionalNode
   | FunctionCallNode
-  | LambdaNode
+  | FunctionNode
   | DefNode;
 
 interface AstNodeBase {
@@ -84,17 +84,17 @@ interface AstNodeBase {
 }
 
 export const enum AstNodeType {
-  Literal = 1,
-  Identifier,
-  Binary,
-  Unary,
-  Member,
-  Object,
-  Array,
-  Conditional,
-  FunctionCall,
-  Lambda,
-  Def,
+  Literal = 'literal',
+  Identifier = 'id',
+  Binary = 'bin',
+  Unary = 'unary',
+  Member = 'member',
+  Object = 'obj',
+  Array = 'arr',
+  Conditional = 'cond',
+  FunctionCall = 'call',
+  Function = 'fn',
+  Def = 'def',
 }
 
 export interface LiteralNode extends AstNodeBase {
@@ -161,8 +161,8 @@ export interface FunctionCallNode extends AstNodeBase, OptionalBase {
   args: AstNode[];
 }
 
-export interface LambdaNode extends AstNodeBase {
-  type: AstNodeType.Lambda;
+export interface FunctionNode extends AstNodeBase {
+  type: AstNodeType.Function;
   expr: AstNode;
 }
 
@@ -179,25 +179,25 @@ export interface Def {
 
 export const enum StateType {
   expectOperand = 1,
-  expectBinOp,
-  expectObjKey,
-  expectKeyValSep,
-  computedMember,
-  member,
-  def,
-  defAssign,
-  defVal,
-  expectTransform,
-  postTransform,
-  exprTransform,
-  subExp,
-  argVal,
-  objKey,
-  objVal,
-  arrayVal,
-  ternaryMid,
-  ternaryEnd,
-  complete,
+  expectBinOp = 2,
+  expectObjKey = 3,
+  expectKeyValSep = 4,
+  computedMember = 5,
+  member = 6,
+  def = 7,
+  defAssign = 8,
+  defVal = 9,
+  expectTransform = 10,
+  postTransform = 11,
+  exprTransform = 12,
+  subExp = 13,
+  argVal = 14,
+  objKey = 15,
+  objVal = 16,
+  arrayVal = 17,
+  ternaryMid = 18,
+  ternaryEnd = 19,
+  complete = 20,
 }
 
 export interface State {

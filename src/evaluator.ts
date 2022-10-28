@@ -7,7 +7,7 @@ import type {
   EvaluateContext,
   FunctionCallNode,
   IdentifierNode,
-  LambdaNode,
+  FunctionNode,
   LiteralNode,
   MemberNode,
   ObjectNode,
@@ -22,7 +22,7 @@ const handlers = {
    */
   [AstNodeType.Literal]: (ast: LiteralNode) => ast.value,
   /**
-   * Evaluates an Identifier by either stemming from the `args` by a lambda
+   * Evaluates an Identifier by either stemming from the `args` by a function
    * or the `locals` by define local variables or the `variables`.
    */
   [AstNodeType.Identifier]: (ast: IdentifierNode, context: EvaluateContext) => {
@@ -100,7 +100,7 @@ const handlers = {
       : evaluate(ast.alternate, context);
   },
   /**
-   * Evaluates a FunctionCall node by applying a function from the transforms map or a Lambda or context.
+   * Evaluates a FunctionCall node by applying a function.
    */
   [AstNodeType.FunctionCall]: (ast: FunctionCallNode, context: EvaluateContext) => {
     const fn = ast.func.type === AstNodeType.Identifier
@@ -123,9 +123,9 @@ const handlers = {
     return fn(...args);
   },
   /**
-   * Evaluates a Lambda expression by passing the args.
+   * Evaluates a Function expression by passing the args.
    */
-  [AstNodeType.Lambda]: (ast: LambdaNode, context: EvaluateContext) => {
+  [AstNodeType.Function]: (ast: FunctionNode, context: EvaluateContext) => {
     return (...args: any[]) => {
       return evaluate(ast.expr, { ...context, args });
     };

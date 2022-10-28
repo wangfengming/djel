@@ -1,9 +1,9 @@
-import type { AstNode, LambdaNode } from './types';
+import type { AstNode, FunctionNode } from './types';
 import { AstNodeType } from './types';
 
 export function maybeLambda(ast: AstNode) {
   return ast._lambda
-    ? { type: AstNodeType.Lambda, expr: ast } as LambdaNode
+    ? { type: AstNodeType.Function, expr: ast } as FunctionNode
     : ast;
 }
 
