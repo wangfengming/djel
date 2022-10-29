@@ -90,7 +90,14 @@ const handlers = {
   },
   [AstNodeType.Function]: (ast: FunctionNode, context: EvaluateContext) => {
     return (...args: any[]) => {
-      return evaluate(ast.expr, { ...context, args });
+      const newContext = { ...context, args };
+      if (ast.argNames) {
+        newContext.locals = { ...newContext.locals };
+        ast.argNames.forEach((argName, index) => {
+          newContext.locals![argName] = args[index];
+        });
+      }
+      return evaluate(ast.expr, newContext);
     };
   },
   [AstNodeType.Def]: (ast: DefNode, context: EvaluateContext) => {

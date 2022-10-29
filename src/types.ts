@@ -62,6 +62,8 @@ export const enum TokenType {
   unaryOp = 19,
   identifier = 20,
   literal = 21,
+  fn = 22,
+  arrow = 23,
 }
 
 export type AstNode =
@@ -163,6 +165,7 @@ export interface FunctionCallNode extends AstNodeBase, OptionalBase {
 
 export interface FunctionNode extends AstNodeBase {
   type: AstNodeType.Function;
+  argNames?: string[];
   expr: AstNode;
 }
 
@@ -181,19 +184,24 @@ export const enum StateType {
   expectOperand = 1,
   expectBinOp = 2,
   expectObjKey = 3,
+  objKey = 15,
   expectKeyValSep = 4,
+  objVal = 16,
   computedMember = 5,
   member = 6,
   def = 7,
   defAssign = 8,
   defVal = 9,
+  fn = 21,
+  fnArg = 22,
+  fnPostArg = 23,
+  fnArrow = 24,
+  fnExpr = 25,
   expectTransform = 10,
   postTransform = 11,
   exprTransform = 12,
+  arg = 14,
   subExp = 13,
-  argVal = 14,
-  objKey = 15,
-  objVal = 16,
   arrayVal = 17,
   ternaryMid = 18,
   ternaryEnd = 19,

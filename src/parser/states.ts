@@ -6,6 +6,7 @@ import {
   astComputedMemberProperty,
   astDefVal,
   astExprTransform,
+  astFnExpr,
   astObjKey,
   astObjVal,
   astSubExp,
@@ -15,6 +16,8 @@ import {
   tokenBinaryOp,
   tokenComputedMember,
   tokenDefName,
+  tokenFn,
+  tokenFnArg,
   tokenFunctionCall,
   tokenIdentifier,
   tokenLiteral,
@@ -33,8 +36,8 @@ const expectBinOpTokens: State['tokens'] = {
   [TokenType.optionalBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
   [TokenType.dot]: { toState: StateType.member, handler: tokenMember },
   [TokenType.optionalDot]: { toState: StateType.member, handler: tokenMember },
-  [TokenType.openParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
-  [TokenType.optionalParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
+  [TokenType.openParen]: { toState: StateType.arg, handler: tokenFunctionCall },
+  [TokenType.optionalParen]: { toState: StateType.arg, handler: tokenFunctionCall },
   [TokenType.pipe]: { toState: StateType.expectTransform },
   [TokenType.question]: { toState: StateType.ternaryMid, handler: tokenTernaryStart },
 };
@@ -49,6 +52,7 @@ export const states: Record<StateType, State> = {
       [TokenType.openCurly]: { toState: StateType.expectObjKey, handler: tokenObjStart },
       [TokenType.openBracket]: { toState: StateType.arrayVal, handler: tokenArrayStart },
       [TokenType.def]: { toState: StateType.def },
+      [TokenType.fn]: { toState: StateType.fn, handler: tokenFn },
     },
   },
   [StateType.expectBinOp]: {
@@ -61,6 +65,12 @@ export const states: Record<StateType, State> = {
     },
     completable: true,
   },
+  [StateType.computedMember]: {
+    subHandler: astComputedMemberProperty,
+    endTokens: {
+      [TokenType.closeBracket]: StateType.expectBinOp,
+    },
+  },
   [StateType.expectObjKey]: {
     tokens: {
       [TokenType.identifier]: { toState: StateType.expectKeyValSep, handler: tokenObjKey },
@@ -69,9 +79,22 @@ export const states: Record<StateType, State> = {
       [TokenType.closeCurly]: { toState: StateType.expectBinOp },
     },
   },
+  [StateType.objKey]: {
+    subHandler: astObjKey,
+    endTokens: {
+      [TokenType.closeBracket]: StateType.expectKeyValSep,
+    },
+  },
   [StateType.expectKeyValSep]: {
     tokens: {
       [TokenType.colon]: { toState: StateType.objVal },
+    },
+  },
+  [StateType.objVal]: {
+    subHandler: astObjVal,
+    endTokens: {
+      [TokenType.comma]: StateType.expectObjKey,
+      [TokenType.closeCurly]: StateType.expectBinOp,
     },
   },
   [StateType.def]: {
@@ -84,6 +107,38 @@ export const states: Record<StateType, State> = {
       [TokenType.assign]: { toState: StateType.defVal },
     },
   },
+  [StateType.defVal]: {
+    subHandler: astDefVal,
+    endTokens: {
+      [TokenType.semi]: StateType.expectOperand,
+    },
+  },
+  [StateType.fn]: {
+    tokens: {
+      [TokenType.openParen]: { toState: StateType.fnArg },
+    },
+  },
+  [StateType.fnArg]: {
+    tokens: {
+      [TokenType.identifier]: { toState: StateType.fnPostArg, handler: tokenFnArg },
+      [TokenType.closeParen]: { toState: StateType.fnArrow },
+    },
+  },
+  [StateType.fnPostArg]: {
+    tokens: {
+      [TokenType.comma]: { toState: StateType.fnArg },
+      [TokenType.closeParen]: { toState: StateType.fnArrow },
+    },
+  },
+  [StateType.fnArrow]: {
+    tokens: {
+      [TokenType.arrow]: { toState: StateType.fnExpr },
+    },
+  },
+  [StateType.fnExpr]: {
+    subHandler: astFnExpr,
+    completable: true,
+  },
   [StateType.expectTransform]: {
     tokens: {
       [TokenType.identifier]: { toState: StateType.postTransform, handler: tokenTransform },
@@ -93,15 +148,22 @@ export const states: Record<StateType, State> = {
   [StateType.postTransform]: {
     tokens: {
       ...expectBinOpTokens,
-      [TokenType.openParen]: { toState: StateType.argVal },
+      [TokenType.openParen]: { toState: StateType.arg },
       [TokenType.optionalParen]: undefined,
     },
     completable: true,
   },
-  [StateType.computedMember]: {
-    subHandler: astComputedMemberProperty,
+  [StateType.exprTransform]: {
+    subHandler: astExprTransform,
     endTokens: {
-      [TokenType.closeBracket]: StateType.expectBinOp,
+      [TokenType.closeParen]: StateType.postTransform,
+    },
+  },
+  [StateType.arg]: {
+    subHandler: astArgVal,
+    endTokens: {
+      [TokenType.comma]: StateType.arg,
+      [TokenType.closeParen]: StateType.expectBinOp,
     },
   },
   [StateType.subExp]: {
@@ -110,43 +172,11 @@ export const states: Record<StateType, State> = {
       [TokenType.closeParen]: StateType.expectBinOp,
     },
   },
-  [StateType.objKey]: {
-    subHandler: astObjKey,
-    endTokens: {
-      [TokenType.closeBracket]: StateType.expectKeyValSep,
-    },
-  },
-  [StateType.objVal]: {
-    subHandler: astObjVal,
-    endTokens: {
-      [TokenType.comma]: StateType.expectObjKey,
-      [TokenType.closeCurly]: StateType.expectBinOp,
-    },
-  },
   [StateType.arrayVal]: {
     subHandler: astArrayVal,
     endTokens: {
       [TokenType.comma]: StateType.arrayVal,
       [TokenType.closeBracket]: StateType.expectBinOp,
-    },
-  },
-  [StateType.defVal]: {
-    subHandler: astDefVal,
-    endTokens: {
-      [TokenType.semi]: StateType.expectOperand,
-    },
-  },
-  [StateType.exprTransform]: {
-    subHandler: astExprTransform,
-    endTokens: {
-      [TokenType.closeParen]: StateType.postTransform,
-    },
-  },
-  [StateType.argVal]: {
-    subHandler: astArgVal,
-    endTokens: {
-      [TokenType.comma]: StateType.argVal,
-      [TokenType.closeParen]: StateType.expectBinOp,
     },
   },
   [StateType.ternaryMid]: {

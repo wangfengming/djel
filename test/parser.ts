@@ -811,6 +811,63 @@ describe('Parser', () => {
       });
     });
   });
+  describe('Function', () => {
+    it('should apply function as transform', () => {
+      expect(parse('arr|(fn(a)=>a.x>1)+1')).to.deep.equal({
+        type: AstNodeType.Binary,
+        operator: '+',
+        left: {
+          type: AstNodeType.FunctionCall,
+          func: {
+            type: AstNodeType.Function,
+            argNames: ['a'],
+            expr: {
+              type: AstNodeType.Binary,
+              operator: '>',
+              left: {
+                type: AstNodeType.Member,
+                left: { type: AstNodeType.Identifier, value: 'a' },
+                right: { type: AstNodeType.Literal, value: 'x' },
+              },
+              right: { type: AstNodeType.Literal, value: 1 },
+            },
+          },
+          args: [
+            { type: AstNodeType.Identifier, value: 'arr' },
+          ],
+        },
+        right: { type: AstNodeType.Literal, value: 1 },
+      });
+    });
+    it('should apply transform with function arg', () => {
+      expect(parse('arr|filter(fn(a,b)=>(b.x>1)?2:3)')).to.deep.equal({
+        type: AstNodeType.FunctionCall,
+        func: { type: AstNodeType.Identifier, value: 'filter' },
+        args: [
+          { type: AstNodeType.Identifier, value: 'arr' },
+          {
+            type: AstNodeType.Function,
+            argNames: ['a', 'b'],
+            expr: {
+              type: AstNodeType.Conditional,
+              test: {
+                type: AstNodeType.Binary,
+                operator: '>',
+                left: {
+                  type: AstNodeType.Member,
+                  left: { type: AstNodeType.Identifier, value: 'b' },
+                  right: { type: AstNodeType.Literal, value: 'x' },
+                },
+                right: { type: AstNodeType.Literal, value: 1 },
+              },
+              consequent: { type: AstNodeType.Literal, value: 2 },
+              alternate: { type: AstNodeType.Literal, value: 3 },
+            },
+          },
+        ],
+      });
+    });
+  });
   describe('Lambda', () => {
     it('should apply lambda as transform', () => {
       expect(parse('arr|(@.x>1)+1')).to.deep.equal({

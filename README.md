@@ -77,6 +77,20 @@ yarn add djexl-js
 import Djel from 'djexl-js';
 ```
 
+## 注入变量
+
+求值时，可以注入变量。如
+
+```javascript
+const variables = { age: 10 };
+
+djel.evaluate('age * (3 - 1)', variables); // => 20
+
+// 或者
+const expression = djel.compile('age * (3 - 1)');
+expression.evaluate(variables); // => 20
+```
+
 ## 一元操作符
 
 | 操作符 | 符号  |
@@ -240,24 +254,11 @@ djel.addTransforms({
 | "password==guest"&#124;split('==')         | `['password', 'guest']` |
 | `split("password==guest", '==')`           | `['password', 'guest']` |
 
-## 简版函数定义 Lambda
+## 函数定义
 
-在函数调用的参数中，或者在管道函数表达式中，可以使用 `@` `@0` `@1` ~ `@9` 的特殊标识符来定义一个简版函数。
-`@` `@0` 表示第 0 个函数参数，`@1` ~ `@9` 分别表示 第 2 ~ 10 个函数参数。比如：
+定义函数的形式是 `fn () => expression` 或者 `fn (a, b, c) => expression`。
 
-```
-@.x + @1
-```
-
-表示
-
-```javascript
-(...args) => args[0].x + args[1]
-```
-
-注意，简版函数只可以定义在函数调用参数中，或者管道函数表达式中。
-
-- 定义在函数调用参数中
+示例：
 
 ```javascript
 const variables = {
@@ -277,6 +278,22 @@ djel.addTransforms({
 });
 ```
 
+| 表达式                                       | 结果                                   |
+|-------------------------------------------|--------------------------------------|
+| users&#124;filter(fn(a)=>a.age<18)        | `[{ age: 17, name: "Len Trexler" }]` |
+| users&#124;map(fn(a)=>a.age)              | `[18,17,19]`                         |
+| users&#124;sum(fn(a)=>a.age)/users.length | `18`                                 |
+| `filter(users,fn(a)=>a.age<18)`           | `[{ age: 17, name: "Len Trexler" }]` |
+| `map(users,fn(a)=>a.age)`                 | `[18,17,19]`                         |
+| `sum(users,fn(a)=>a.age)/users.length`    | `18`                                 |
+
+## 简版函数定义
+
+可以使用 `@` `@0` `@1` ~ `@9` 的特殊标识符来定义一个简版函数。
+`@` `@0` 表示第 0 个函数参数，`@1` ~ `@9` 分别表示 第 1 ~ 9 个函数参数。比如：`@.x + @1` 表示 `fn (a, b) => a.x + b`。
+
+示例（变量和注入函数同"函数定义"的示例）：
+
 | 表达式                                | 结果                                   |
 |------------------------------------|--------------------------------------|
 | users&#124;filter(@.age<18)        | `[{ age: 17, name: "Len Trexler" }]` |
@@ -285,26 +302,6 @@ djel.addTransforms({
 | `filter(users,@.age<18)`           | `[{ age: 17, name: "Len Trexler" }]` |
 | `map(users,@.age)`                 | `[18,17,19]`                         |
 | `sum(users,@.age)/users.length`    | `18`                                 |
-
-- 定义在管道函数表达式中
-
-| 表达式                   | 结果       |
-|-----------------------|----------|
-| (1+2+3)&#124;({x:@}}) | `{x: 6}` |
-
-## 注入变量
-
-求值时，可以注入变量。如
-
-```javascript
-const variables = { age: 10 };
-
-djel.evaluate('age * (3 - 1)', variables); // => 20
-
-// 或者
-const expression = djel.compile('age * (3 - 1)');
-expression.evaluate(variables); // => 20
-```
 
 ## API
 
