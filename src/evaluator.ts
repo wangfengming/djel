@@ -15,7 +15,7 @@ import type {
   UnaryNode,
 } from './types';
 import { AstNodeType } from './types';
-import { hasOwn } from './utils';
+import { arrayFrom, hasOwn } from './utils';
 
 const handlers = {
   [AstNodeType.Literal]: (ast: LiteralNode) => ast.value,
@@ -60,7 +60,7 @@ const handlers = {
     ast.value.forEach((item) => {
       const value = evaluate(item, context);
       if (item.type === AstNodeType.Spread) {
-        result = result.concat(Array.from(value));
+        result = result.concat(arrayFrom(value));
       } else {
         result.push(value);
       }

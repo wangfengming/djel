@@ -18,3 +18,12 @@ export function last<T>(a: T[]) {
 export function hasOwn(o: any, key: string) {
   return Object.prototype.hasOwnProperty.call(o, key);
 }
+
+export const arrayFrom = Array.from || ((a: any) => {
+  if (Array.isArray(a)) return a;
+  const result: any[] = [];
+  for (let i = 0, len = a.length; i < len; i++) {
+    result.push(a[i]);
+  }
+  return result;
+});
