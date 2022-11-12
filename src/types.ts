@@ -109,34 +109,49 @@ interface AstNodeBase {
 }
 
 export const enum AstNodeType {
+  // 字面值常量
   Literal = 'literal',
+  // 标识符
   Identifier = 'id',
+  // 二院操作
   Binary = 'bin',
+  // 一元操作
   Unary = 'unary',
+  // 成员访问。a.b 或 a[b] 形式
   Member = 'member',
+  // 对象
   Object = 'obj',
+  // 数组
   Array = 'arr',
+  // 三元操作
   Conditional = 'cond',
+  // 函数调用。a(b) 或 b|a 形式
   FunctionCall = 'call',
+  // 函数定义。@ > 1 或 fn (a) => a > 1 形式
   Function = 'fn',
+  // 定义变量
   Def = 'def',
+  // 展开操作。仅用于数组和对象内
   Spread = 'spread',
 }
 
 export interface LiteralNode extends AstNodeBase {
   type: AstNodeType.Literal;
-  value: string | number | boolean;
+  value: string | number | boolean | null;
 }
 
 export interface IdentifierNode extends AstNodeBase {
   type: AstNodeType.Identifier;
   value: string;
+  // 是否为 @、@0~@9 形式的简单函数参数
   isArg?: boolean;
+  // 函数参数 index
   argIdx?: number;
 }
 
 export interface BinaryNode extends AstNodeBase {
   type: AstNodeType.Binary;
+  // 操作符
   operator: string;
   left: AstNode;
   right: AstNode;
@@ -144,17 +159,21 @@ export interface BinaryNode extends AstNodeBase {
 
 export interface UnaryNode extends AstNodeBase {
   type: AstNodeType.Unary;
+  // 操作符
   operator: string;
   right: AstNode;
 }
 
 export interface OptionalBase {
+  // Member、FunctionCall，是否可选 a?.b
   optional?: boolean;
+  // Member、FunctionCall，是否左侧可选 a?.b.c
   leftOptional?: boolean;
 }
 
 export interface MemberNode extends AstNodeBase, OptionalBase {
   type: AstNodeType.Member;
+  // true a[b] 形式、false a.b 形式
   computed?: boolean;
   left: AstNode;
   right: AstNode;
@@ -167,11 +186,13 @@ export interface ObjectNode extends AstNodeBase {
 
 export interface ObjectEntry {
   key?: AstNode;
+  // 没有 key 时，value 应为 SpreadNode，即 { ...obj }
   value: AstNode;
 }
 
 export interface ArrayNode extends AstNodeBase {
   type: AstNodeType.Array;
+  // value 可以是 SpreadNode
   value: AstNode[];
 }
 
@@ -195,7 +216,9 @@ export interface FunctionCallNode extends AstNodeBase, OptionalBase {
 
 export interface FunctionNode extends AstNodeBase {
   type: AstNodeType.Function;
+  // 函数定义的参数名。当使用简版定义时（即使用 @），没有参数名。
   argNames?: string[];
+  // 函数定义
   expr: AstNode;
 }
 
@@ -205,6 +228,7 @@ export interface DefNode extends AstNodeBase {
   statement: AstNode;
 }
 
+// 定义变量，def a = expression 形式
 export interface Def {
   name: string;
   value: AstNode;
