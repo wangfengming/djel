@@ -276,12 +276,12 @@ describe('Evaluator', () => {
       expect(evaluate('foo|half + 3', variables, transforms)).to.equal(8);
     });
     it('should apply data function transforms', () => {
+      const double = (v: number) => v * 2;
+      const half = (v: number) => v / 2;
       const variables = {
         foo: 10,
-        double: (v: number) => v * 2,
-        fns: {
-          half: (v: number) => v / 2,
-        },
+        double,
+        fns: { half },
       };
       expect(evaluate('foo|double + 3', variables)).to.equal(23);
       expect(evaluate('foo|(fns.half) + 3', variables)).to.equal(8);
@@ -350,12 +350,12 @@ describe('Evaluator', () => {
       expect(evaluate('half(foo) + 3', variables, transforms)).to.equal(8);
     });
     it('should apply function of variables', () => {
+      const double = (v: number) => v * 2;
+      const half = (v: number) => v / 2;
       const variables = {
         foo: 10,
-        double: (v: number) => v * 2,
-        fns: {
-          half: (v: number) => v / 2,
-        },
+        double,
+        fns: { half },
       };
       expect(evaluate('double(foo) + 3', variables)).to.equal(23);
       expect(evaluate('fns.half(foo) + 3', variables)).to.equal(8);

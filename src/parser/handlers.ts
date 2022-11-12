@@ -31,8 +31,9 @@ export function tokenLiteral(this: Parser, token: Token) {
 export function tokenIdentifier(this: Parser, token: Token) {
   const identifier = token.value;
   const node = { type: AstNodeType.Identifier, value: identifier } as IdentifierNode;
-  if (token.argIndex !== undefined) {
-    node.argIndex = token.argIndex;
+  if (token.isArg) {
+    node.isArg = true;
+    node.argIdx = token.argIdx;
     this._lambda = true;
   }
   this.placeAtCursor(node);

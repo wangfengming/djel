@@ -82,7 +82,8 @@ function createToken(element: string, grammar: Omit<Grammar, 'transforms'>, pref
     token.type = TokenType.identifier;
     const match = element.match(/^@(\d?)$/);
     if (match) {
-      token.argIndex = +match[1] || 0;
+      token.isArg = true;
+      token.argIdx = +match[1] || 0;
     }
   } else {
     throw new Error(`Invalid expression token: ${element}`);

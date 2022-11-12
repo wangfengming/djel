@@ -184,9 +184,9 @@ describe('tokenizer', () => {
       { type: TokenType.pipe, value: '|', raw: '|' },
       { type: TokenType.identifier, value: 'filter', raw: 'filter' },
       { type: TokenType.openParen, value: '(', raw: '(' },
-      { type: TokenType.identifier, value: '@3', raw: '@3', argIndex: 3 },
+      { type: TokenType.identifier, value: '@3', raw: '@3', isArg: true, argIdx: 3 },
       { type: TokenType.binaryOp, value: '>', raw: '>' },
-      { type: TokenType.identifier, value: '@', raw: '@', argIndex: 0 },
+      { type: TokenType.identifier, value: '@', raw: '@', isArg: true, argIdx: 0 },
       { type: TokenType.closeParen, value: ')', raw: ')' },
     ]);
   });

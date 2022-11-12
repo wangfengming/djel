@@ -471,7 +471,7 @@ describe('Parser', () => {
   });
   describe('Object literals', () => {
     it('should handle object literals', () => {
-      expect(parse('{foo: "bar", tek: 1+2}')).to.deep.equal({
+      expect(parse('{foo: "bar", "tek": 1+2}')).to.deep.equal({
         type: AstNodeType.Object,
         entries: [
           {
@@ -491,7 +491,7 @@ describe('Parser', () => {
       });
     });
     it('should handle nested object literals', () => {
-      expect(parse('{foo: {bar: "tek"}}')).to.deep.equal({
+      expect(parse('{foo: {\'bar\': "tek"}}')).to.deep.equal({
         type: AstNodeType.Object,
         entries: [
           {
@@ -645,7 +645,7 @@ describe('Parser', () => {
     it('def variables without return will be ignored', () => {
       expect(parse('def a = 1;')).to.equal(undefined);
     });
-    it('ignore then end semi in def variables', () => {
+    it('ignore the end semi in def variables', () => {
       expect(parse('def a = 1')).to.equal(undefined);
     });
     it('ignore then end semi in return', () => {
@@ -882,7 +882,7 @@ describe('Parser', () => {
               operator: '>',
               left: {
                 type: AstNodeType.Member,
-                left: { type: AstNodeType.Identifier, value: '@', argIndex: 0 },
+                left: { type: AstNodeType.Identifier, value: '@', isArg: true, argIdx: 0 },
                 right: { type: AstNodeType.Literal, value: 'x' },
               },
               right: { type: AstNodeType.Literal, value: 1 },
@@ -910,7 +910,7 @@ describe('Parser', () => {
                 operator: '>',
                 left: {
                   type: AstNodeType.Member,
-                  left: { type: AstNodeType.Identifier, value: '@1', argIndex: 1 },
+                  left: { type: AstNodeType.Identifier, value: '@1', isArg: true, argIdx: 1 },
                   right: { type: AstNodeType.Literal, value: 'x' },
                 },
                 right: { type: AstNodeType.Literal, value: 1 },

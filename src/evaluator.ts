@@ -19,7 +19,7 @@ import { hasOwn } from './utils';
 const handlers = {
   [AstNodeType.Literal]: (ast: LiteralNode) => ast.value,
   [AstNodeType.Identifier]: (ast: IdentifierNode, context: EvaluateContext) => {
-    if (context.args && ast.argIndex !== undefined) return context.args[ast.argIndex];
+    if (context.args && ast.isArg) return context.args[ast.argIdx!];
     if (context.locals && hasOwn(context.locals, ast.value)) return context.locals[ast.value];
     if (context.variables == null) {
       throw new Error(`No variables provided for evaluate`);

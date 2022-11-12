@@ -37,7 +37,8 @@ export interface Token {
   // for literal token.
   literal?: string | number | boolean | null;
   // for arguments identifier
-  argIndex?: number;
+  isArg?: boolean;
+  argIdx?: number;
 }
 
 export const enum TokenType {
@@ -107,7 +108,8 @@ export interface LiteralNode extends AstNodeBase {
 export interface IdentifierNode extends AstNodeBase {
   type: AstNodeType.Identifier;
   value: string;
-  argIndex?: number;
+  isArg?: boolean;
+  argIdx?: number;
 }
 
 export interface BinaryNode extends AstNodeBase {
