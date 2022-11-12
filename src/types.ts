@@ -42,29 +42,50 @@ export interface Token {
 }
 
 export const enum TokenType {
+  // [
   openBracket = 1,
+  // ?.[
   optionalBracket = 2,
+  // ]
   closeBracket = 3,
+  // {
   openCurly = 4,
+  // }
   closeCurly = 5,
+  // (
   openParen = 6,
+  // ?.(
   optionalParen = 7,
+  // )
   closeParen = 8,
+  // .
   dot = 9,
+  // ?.
   optionalDot = 10,
+  // :
   colon = 11,
+  // ,
   comma = 12,
+  // ?
   question = 13,
+  // |
   pipe = 14,
+  // def
   def = 15,
+  // =
   assign = 16,
+  // ;
   semi = 17,
   binaryOp = 18,
   unaryOp = 19,
   identifier = 20,
   literal = 21,
+  // fn
   fn = 22,
+  // =>
   arrow = 23,
+  // ...
+  spread = 24,
 }
 
 export type AstNode =
@@ -75,6 +96,7 @@ export type AstNode =
   | MemberNode
   | ArrayNode
   | ObjectNode
+  | SpreadNode
   | ConditionalNode
   | FunctionCallNode
   | FunctionNode
@@ -98,6 +120,7 @@ export const enum AstNodeType {
   FunctionCall = 'call',
   Function = 'fn',
   Def = 'def',
+  Spread = 'spread',
 }
 
 export interface LiteralNode extends AstNodeBase {
@@ -143,13 +166,18 @@ export interface ObjectNode extends AstNodeBase {
 }
 
 export interface ObjectEntry {
-  key: AstNode;
+  key?: AstNode;
   value: AstNode;
 }
 
 export interface ArrayNode extends AstNodeBase {
   type: AstNodeType.Array;
   value: AstNode[];
+}
+
+export interface SpreadNode extends AstNodeBase {
+  type: AstNodeType.Spread;
+  value: AstNode;
 }
 
 export interface ConditionalNode extends AstNodeBase {
@@ -189,6 +217,9 @@ export const enum StateType {
   objKey = 15,
   expectKeyValSep = 4,
   objVal = 16,
+  objSpreadVal = 27,
+  arrayVal = 17,
+  spread = 26,
   computedMember = 5,
   member = 6,
   def = 7,
@@ -204,7 +235,6 @@ export const enum StateType {
   exprTransform = 12,
   arg = 14,
   subExp = 13,
-  arrayVal = 17,
   ternaryMid = 18,
   ternaryEnd = 19,
   complete = 20,

@@ -190,6 +190,18 @@ export function astObjVal(this: Parser, ast?: AstNode) {
   last(entries).value = ast;
 }
 
+export function astObjSpreadVal(this: Parser, ast?: AstNode) {
+  this.assert(ast);
+  (this._cursor as ObjectNode).entries.push({
+    value: { type: AstNodeType.Spread, value: ast },
+  });
+}
+
+export function astSpread(this: Parser, ast?: AstNode) {
+  this.assert(ast);
+  this.placeAtCursor({ type: AstNodeType.Spread, value: ast });
+}
+
 /**
  * 创建 Conditional 节点。当前 token 是 `a ? b : c` 中的 `?`
  */

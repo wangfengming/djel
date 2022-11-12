@@ -6,11 +6,12 @@ import type {
   DefNode,
   EvaluateContext,
   FunctionCallNode,
-  IdentifierNode,
   FunctionNode,
+  IdentifierNode,
   LiteralNode,
   MemberNode,
   ObjectNode,
+  SpreadNode,
   UnaryNode,
 } from './types';
 import { AstNodeType } from './types';
@@ -54,11 +55,27 @@ const handlers = {
     }
     return left[key];
   },
-  [AstNodeType.Array]: (ast: ArrayNode, context: EvaluateContext) => ast.value.map((item) => evaluate(item, context)),
+  [AstNodeType.Array]: (ast: ArrayNode, context: EvaluateContext) => {
+    let result: any[] = [];
+    ast.value.forEach((item) => {
+      const value = evaluate(item, context);
+      if (item.type === AstNodeType.Spread) {
+        result = result.concat(Array.from(value));
+      } else {
+        result.push(value);
+      }
+    });
+    return result;
+  },
   [AstNodeType.Object]: (ast: ObjectNode, context: EvaluateContext) => {
     const result: any = {};
     ast.entries.forEach((entry) => {
-      result[evaluate(entry.key, context)] = evaluate(entry.value, context);
+      const value = evaluate(entry.value, context);
+      if (entry.key) {
+        result[evaluate(entry.key, context)] = value;
+      } else {
+        Object.assign(result, value);
+      }
     });
     return result;
   },
@@ -107,6 +124,10 @@ const handlers = {
     });
     const result = evaluate(ast.statement, newContext);
     return result;
+  },
+  [AstNodeType.Spread]: (ast: SpreadNode, context: EvaluateContext) => {
+    const value = evaluate(ast.value, context);
+    return value;
   },
 };
 

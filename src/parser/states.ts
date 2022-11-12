@@ -8,7 +8,9 @@ import {
   astExprTransform,
   astFnExpr,
   astObjKey,
+  astObjSpreadVal,
   astObjVal,
+  astSpread,
   astSubExp,
   astTernaryEnd,
   astTernaryMid,
@@ -53,6 +55,7 @@ export const states: Record<StateType, State> = {
       [TokenType.openBracket]: { toState: StateType.arrayVal, handler: tokenArrayStart },
       [TokenType.def]: { toState: StateType.def },
       [TokenType.fn]: { toState: StateType.fn, handler: tokenFn },
+      [TokenType.spread]: { toState: StateType.spread },
     },
   },
   [StateType.expectBinOp]: {
@@ -71,12 +74,20 @@ export const states: Record<StateType, State> = {
       [TokenType.closeBracket]: StateType.expectBinOp,
     },
   },
+  [StateType.arrayVal]: {
+    subHandler: astArrayVal,
+    endTokens: {
+      [TokenType.comma]: StateType.arrayVal,
+      [TokenType.closeBracket]: StateType.expectBinOp,
+    },
+  },
   [StateType.expectObjKey]: {
     tokens: {
       [TokenType.identifier]: { toState: StateType.expectKeyValSep, handler: tokenObjKey },
       [TokenType.literal]: { toState: StateType.expectKeyValSep, handler: tokenObjKey },
       [TokenType.openBracket]: { toState: StateType.objKey },
       [TokenType.closeCurly]: { toState: StateType.expectBinOp },
+      [TokenType.spread]: { toState: StateType.objSpreadVal },
     },
   },
   [StateType.objKey]: {
@@ -96,6 +107,17 @@ export const states: Record<StateType, State> = {
       [TokenType.comma]: StateType.expectObjKey,
       [TokenType.closeCurly]: StateType.expectBinOp,
     },
+  },
+  [StateType.objSpreadVal]: {
+    subHandler: astObjSpreadVal,
+    endTokens: {
+      [TokenType.comma]: StateType.expectObjKey,
+      [TokenType.closeCurly]: StateType.expectBinOp,
+    },
+  },
+  [StateType.spread]: {
+    subHandler: astSpread,
+    completable: true,
   },
   [StateType.def]: {
     tokens: {
@@ -170,13 +192,6 @@ export const states: Record<StateType, State> = {
     subHandler: astSubExp,
     endTokens: {
       [TokenType.closeParen]: StateType.expectBinOp,
-    },
-  },
-  [StateType.arrayVal]: {
-    subHandler: astArrayVal,
-    endTokens: {
-      [TokenType.comma]: StateType.arrayVal,
-      [TokenType.closeBracket]: StateType.expectBinOp,
     },
   },
   [StateType.ternaryMid]: {

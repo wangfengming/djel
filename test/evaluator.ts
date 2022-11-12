@@ -243,6 +243,11 @@ describe('Evaluator', () => {
     it('should evaluate dot notation for object literals', () => {
       expect(evaluate('{foo: "bar"}.foo')).to.equal('bar');
     });
+    it('should evaluate object spread', () => {
+      expect(evaluate('{...{b:2,c:3}}')).to.deep.equal({ b: 2, c: 3 });
+      expect(evaluate('{a:1,...{b:2,c:3}}')).to.deep.equal({ a: 1, b: 2, c: 3 });
+      expect(evaluate('{...{b:2,c:3},d:4}')).to.deep.equal({ b: 2, c: 3, d: 4 });
+    });
   });
   describe('Array', () => {
     it('should evaluate array literals', () => {
@@ -251,6 +256,14 @@ describe('Evaluator', () => {
     it('should allow properties on empty arrays', () => {
       const variables = { foo: {} };
       expect(evaluate('[].baz', variables)).to.equal(undefined);
+    });
+    it('should evaluate spread array', () => {
+      expect(evaluate('[..."123"]')).to.deep.equal(['1', '2', '3']);
+      expect(evaluate('[...[1,2,3]]')).to.deep.equal([1, 2, 3]);
+      expect(evaluate('[0,..."123"]')).to.deep.equal([0, '1', '2', '3']);
+      expect(evaluate('[0,...[1,2,3]]')).to.deep.equal([0, 1, 2, 3]);
+      expect(evaluate('[..."123",4]')).to.deep.equal(['1', '2', '3', 4]);
+      expect(evaluate('[...[1,2,3],4]')).to.deep.equal([1, 2, 3, 4]);
     });
   });
   describe('Define variables', () => {

@@ -531,6 +531,49 @@ describe('Parser', () => {
         ],
       });
     });
+    it('should handle object spread', () => {
+      expect(parse('{...obj}')).to.deep.equal({
+        type: AstNodeType.Object,
+        entries: [
+          {
+            value: {
+              type: AstNodeType.Spread,
+              value: { type: AstNodeType.Identifier, value: 'obj' },
+            },
+          },
+        ],
+      });
+      expect(parse('{a: 1,...obj}')).to.deep.equal({
+        type: AstNodeType.Object,
+        entries: [
+          {
+            key: { type: AstNodeType.Literal, value: 'a' },
+            value: { type: AstNodeType.Literal, value: 1 },
+          },
+          {
+            value: {
+              type: AstNodeType.Spread,
+              value: { type: AstNodeType.Identifier, value: 'obj' },
+            },
+          },
+        ],
+      });
+      expect(parse('{...obj,a:1}')).to.deep.equal({
+        type: AstNodeType.Object,
+        entries: [
+          {
+            value: {
+              type: AstNodeType.Spread,
+              value: { type: AstNodeType.Identifier, value: 'obj' },
+            },
+          },
+          {
+            key: { type: AstNodeType.Literal, value: 'a' },
+            value: { type: AstNodeType.Literal, value: 1 },
+          },
+        ],
+      });
+    });
   });
   describe('Array literals', () => {
     it('should handle array literals', () => {
@@ -566,6 +609,37 @@ describe('Parser', () => {
       expect(parse('[]')).to.deep.equal({
         type: AstNodeType.Array,
         value: [],
+      });
+    });
+    it('should handle array spread', () => {
+      expect(parse('[...arr]')).to.deep.equal({
+        type: AstNodeType.Array,
+        value: [
+          {
+            type: AstNodeType.Spread,
+            value: { type: AstNodeType.Identifier, value: 'arr' },
+          },
+        ],
+      });
+      expect(parse('[a,...arr]')).to.deep.equal({
+        type: AstNodeType.Array,
+        value: [
+          { type: AstNodeType.Identifier, value: 'a' },
+          {
+            type: AstNodeType.Spread,
+            value: { type: AstNodeType.Identifier, value: 'arr' },
+          },
+        ],
+      });
+      expect(parse('[...arr,a]')).to.deep.equal({
+        type: AstNodeType.Array,
+        value: [
+          {
+            type: AstNodeType.Spread,
+            value: { type: AstNodeType.Identifier, value: 'arr' },
+          },
+          { type: AstNodeType.Identifier, value: 'a' },
+        ],
       });
     });
   });

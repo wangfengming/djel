@@ -12,7 +12,7 @@ describe('tokenizer', () => {
   };
 
   it('symbol', () => {
-    expect(tokenize(';[]{}:,()? . ?. ?.[ ?.(def=')).to.deep.equal([
+    expect(tokenize(';[]{}:,()? . ?. ?.[ ?.(def=...')).to.deep.equal([
       { type: TokenType.semi, value: ';', raw: ';' },
       { type: TokenType.openBracket, value: '[', raw: '[' },
       { type: TokenType.closeBracket, value: ']', raw: ']' },
@@ -29,6 +29,7 @@ describe('tokenizer', () => {
       { type: TokenType.optionalParen, value: '?.(', raw: '?.(' },
       { type: TokenType.def, value: 'def', raw: 'def' },
       { type: TokenType.assign, value: '=', raw: '=' },
+      { type: TokenType.spread, value: '...', raw: '...' },
     ]);
   });
   it('binaryOp', () => {

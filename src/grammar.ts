@@ -42,6 +42,7 @@ export const getGrammar = (): Grammar => ({
     'fn': { type: TokenType.fn },
     '=>': { type: TokenType.arrow },
     ';': { type: TokenType.semi },
+    '...': { type: TokenType.spread },
   },
   binaryOps: {
     '+': {
