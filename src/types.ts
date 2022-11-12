@@ -245,6 +245,7 @@ export interface State {
   completable?: boolean;
   subHandler?: (this: Parser, ast?: AstNode) => void;
   endTokens?: Partial<Record<TokenType, StateType>>;
+  required?: boolean;
 }
 
 export interface StateTypeOpts {

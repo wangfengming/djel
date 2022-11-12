@@ -69,6 +69,7 @@ export const states: Record<StateType, State> = {
     completable: true,
   },
   [StateType.computedMember]: {
+    required: true,
     subHandler: astComputedMemberProperty,
     endTokens: {
       [TokenType.closeBracket]: StateType.expectBinOp,
@@ -91,6 +92,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.objKey]: {
+    required: true,
     subHandler: astObjKey,
     endTokens: {
       [TokenType.closeBracket]: StateType.expectKeyValSep,
@@ -102,6 +104,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.objVal]: {
+    required: true,
     subHandler: astObjVal,
     endTokens: {
       [TokenType.comma]: StateType.expectObjKey,
@@ -109,6 +112,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.objSpreadVal]: {
+    required: true,
     subHandler: astObjSpreadVal,
     endTokens: {
       [TokenType.comma]: StateType.expectObjKey,
@@ -116,6 +120,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.spread]: {
+    required: true,
     subHandler: astSpread,
     completable: true,
   },
@@ -130,6 +135,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.defVal]: {
+    required: true,
     subHandler: astDefVal,
     endTokens: {
       [TokenType.semi]: StateType.expectOperand,
@@ -158,6 +164,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.fnExpr]: {
+    required: true,
     subHandler: astFnExpr,
     completable: true,
   },
@@ -176,6 +183,7 @@ export const states: Record<StateType, State> = {
     completable: true,
   },
   [StateType.exprTransform]: {
+    required: true,
     subHandler: astExprTransform,
     endTokens: {
       [TokenType.closeParen]: StateType.postTransform,
@@ -189,6 +197,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.subExp]: {
+    required: true,
     subHandler: astSubExp,
     endTokens: {
       [TokenType.closeParen]: StateType.expectBinOp,
@@ -201,6 +210,7 @@ export const states: Record<StateType, State> = {
     },
   },
   [StateType.ternaryEnd]: {
+    required: true,
     subHandler: astTernaryEnd,
     completable: true,
   },

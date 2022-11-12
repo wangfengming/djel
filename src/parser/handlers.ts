@@ -104,8 +104,7 @@ export function tokenComputedMember(this: Parser, token: Token) {
  * 处理计算属性表达式。即 `a[expression]` 中的 `expression`
  */
 export function astComputedMemberProperty(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  (this._cursor as MemberNode).right = ast;
+  (this._cursor as MemberNode).right = ast!;
 }
 
 /**
@@ -119,8 +118,7 @@ export function tokenDefName(this: Parser, token: Token) {
  * 处理变量定义。即 `def a = expression` 中的 `expression`
  */
 export function astDefVal(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  last(this._defs).value = maybeLambda(ast);
+  last(this._defs).value = maybeLambda(ast!);
 }
 
 export function tokenFn(this: Parser) {
@@ -132,8 +130,7 @@ export function tokenFnArg(this: Parser, token: Token) {
 }
 
 export function astFnExpr(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  (this._cursor as FunctionNode).expr = ast;
+  (this._cursor as FunctionNode).expr = ast!;
   this._lambda = false;
 }
 
@@ -177,7 +174,6 @@ export function tokenObjKey(this: Parser, token: Token) {
  * 处理对象 key 节点。形如 `{[expression]: b}` 中的 `expression`。
  */
 export function astObjKey(this: Parser, ast?: AstNode) {
-  this.assert(ast);
   (this._cursor as ObjectNode).entries.push({ key: ast } as ObjectEntry);
 }
 
@@ -185,21 +181,18 @@ export function astObjKey(this: Parser, ast?: AstNode) {
  * 处理对象 value 节点。
  */
 export function astObjVal(this: Parser, ast?: AstNode) {
-  this.assert(ast);
   const entries = (this._cursor as ObjectNode).entries;
-  last(entries).value = ast;
+  last(entries).value = ast!;
 }
 
 export function astObjSpreadVal(this: Parser, ast?: AstNode) {
-  this.assert(ast);
   (this._cursor as ObjectNode).entries.push({
-    value: { type: AstNodeType.Spread, value: ast },
+    value: { type: AstNodeType.Spread, value: ast! },
   });
 }
 
 export function astSpread(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  this.placeAtCursor({ type: AstNodeType.Spread, value: ast });
+  this.placeAtCursor({ type: AstNodeType.Spread, value: ast! });
 }
 
 /**
@@ -226,8 +219,7 @@ export function astTernaryMid(this: Parser, ast?: AstNode) {
  * 即 `a ? expression1 : expression2` 中的 `expression2`
  */
 export function astTernaryEnd(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  (this._cursor as ConditionalNode).alternate = ast;
+  (this._cursor as ConditionalNode).alternate = ast!;
 }
 
 /**
@@ -266,9 +258,8 @@ export function tokenFunctionCall(this: Parser, token: Token) {
  * 处理管道表达式的函数。即 `a|(expression)` 中的 `expression`。
  */
 export function astExprTransform(this: Parser, ast?: AstNode) {
-  this.assert(ast);
   this._lambda = false;
-  (this._cursor as FunctionCallNode).func = maybeLambda(ast);
+  (this._cursor as FunctionCallNode).func = maybeLambda(ast!);
 }
 
 /**
@@ -283,6 +274,5 @@ export function astArgVal(this: Parser, ast?: AstNode) {
  * 处理子表达式。即 `(expression)` 中的 `expression`。
  */
 export function astSubExp(this: Parser, ast?: AstNode) {
-  this.assert(ast);
-  this.placeAtCursor(ast);
+  this.placeAtCursor(ast!);
 }

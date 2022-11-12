@@ -114,6 +114,7 @@ export class Parser {
 
   private _endSubExp() {
     const ast = this._subParser!.complete();
+    if (this._state.required) this.assert(ast);
     if (ast && ast._lambda) this._lambda = true;
     this._state.subHandler!.call(this, ast);
     this._subParser = undefined;
