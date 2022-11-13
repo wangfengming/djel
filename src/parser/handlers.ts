@@ -121,19 +121,6 @@ export function astDefVal(this: Parser, ast?: AstNode) {
   last(this._defs).value = maybeLambda(ast!);
 }
 
-export function tokenFn(this: Parser) {
-  this.placeAtCursor({ type: AstNodeType.Function, argNames: [] as string[] } as FunctionNode);
-}
-
-export function tokenFnArg(this: Parser, token: Token) {
-  (this._cursor as FunctionNode).argNames!.push(token.value);
-}
-
-export function astFnExpr(this: Parser, ast?: AstNode) {
-  (this._cursor as FunctionNode).expr = ast!;
-  this._lambda = false;
-}
-
 /**
  * 创建 Array 节点。当前 token 是 `[`
  */
@@ -268,6 +255,19 @@ export function astExprTransform(this: Parser, ast?: AstNode) {
 export function astArgVal(this: Parser, ast?: AstNode) {
   this._lambda = false;
   if (ast) (this._cursor as FunctionCallNode).args.push(maybeLambda(ast));
+}
+
+export function tokenFn(this: Parser) {
+  this.placeAtCursor({ type: AstNodeType.Function, argNames: [] as string[] } as FunctionNode);
+}
+
+export function tokenFnArg(this: Parser, token: Token) {
+  (this._cursor as FunctionNode).argNames!.push(token.value);
+}
+
+export function astFnExpr(this: Parser, ast?: AstNode) {
+  (this._cursor as FunctionNode).expr = ast!;
+  this._lambda = false;
 }
 
 /**

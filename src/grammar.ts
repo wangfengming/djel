@@ -39,9 +39,9 @@ export const getGrammar = (): Grammar => ({
     '?': { type: TokenType.question },
     'def': { type: TokenType.def },
     '=': { type: TokenType.assign },
+    ';': { type: TokenType.semi },
     'fn': { type: TokenType.fn },
     '=>': { type: TokenType.arrow },
-    ';': { type: TokenType.semi },
     '...': { type: TokenType.spread },
   },
   binaryOps: {

@@ -38,8 +38,8 @@ const expectBinOpTokens: State['tokens'] = {
   [TokenType.optionalBracket]: { toState: StateType.computedMember, handler: tokenComputedMember },
   [TokenType.dot]: { toState: StateType.member, handler: tokenMember },
   [TokenType.optionalDot]: { toState: StateType.member, handler: tokenMember },
-  [TokenType.openParen]: { toState: StateType.arg, handler: tokenFunctionCall },
-  [TokenType.optionalParen]: { toState: StateType.arg, handler: tokenFunctionCall },
+  [TokenType.openParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
+  [TokenType.optionalParen]: { toState: StateType.argVal, handler: tokenFunctionCall },
   [TokenType.pipe]: { toState: StateType.expectTransform },
   [TokenType.question]: { toState: StateType.ternaryMid, handler: tokenTernaryStart },
 };
@@ -177,7 +177,7 @@ export const states: Record<StateType, State> = {
   [StateType.postTransform]: {
     tokens: {
       ...expectBinOpTokens,
-      [TokenType.openParen]: { toState: StateType.arg },
+      [TokenType.openParen]: { toState: StateType.argVal },
       [TokenType.optionalParen]: undefined,
     },
     completable: true,
@@ -189,10 +189,10 @@ export const states: Record<StateType, State> = {
       [TokenType.closeParen]: StateType.postTransform,
     },
   },
-  [StateType.arg]: {
+  [StateType.argVal]: {
     subHandler: astArgVal,
     endTokens: {
-      [TokenType.comma]: StateType.arg,
+      [TokenType.comma]: StateType.argVal,
       [TokenType.closeParen]: StateType.expectBinOp,
     },
   },

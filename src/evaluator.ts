@@ -70,11 +70,10 @@ const handlers = {
   [AstNodeType.Object]: (ast: ObjectNode, context: EvaluateContext) => {
     const result: any = {};
     ast.entries.forEach((entry) => {
-      const value = evaluate(entry.value, context);
       if (entry.key) {
-        result[evaluate(entry.key, context)] = value;
+        result[evaluate(entry.key, context)] = evaluate(entry.value, context);
       } else {
-        Object.assign(result, value);
+        Object.assign(result, evaluate(entry.value, context));
       }
     });
     return result;

@@ -257,7 +257,7 @@ export const enum StateType {
   expectTransform = 10,
   postTransform = 11,
   exprTransform = 12,
-  arg = 14,
+  argVal = 14,
   subExp = 13,
   ternaryMid = 18,
   ternaryEnd = 19,
